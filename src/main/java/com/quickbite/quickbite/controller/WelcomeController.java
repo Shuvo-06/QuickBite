@@ -4,7 +4,7 @@ import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 
 /**
- * Temporary controller for the Phase 1 test screen.
+ * Temporary com.quickbite.quickbite.controller for the Phase 1 test screen.
  * In Phase 3 the welcome screen will be replaced by the real Login screen.
  */
 public class WelcomeController {

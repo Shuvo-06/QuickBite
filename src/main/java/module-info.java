@@ -15,4 +15,5 @@ module com.quickbite.quickbite {
 
     // The main package must be exported so JavaFX can start the Application class.
     exports com.quickbite.quickbite;
+    exports com.quickbite.quickbite.controller;
 }
