@@ -1,0 +1,54 @@
+/* ===== QuickBite theme ===== */
+
+.root {
+    /* Custom colour variables: reuse them anywhere as -qb-primary etc. */
+    -qb-primary: #d70f64;
+    -qb-primary-dark: #b00c52;
+    -qb-background: #fff5f8;
+    -qb-text: #2b2b2b;
+    -qb-text-muted: #6b6b6b;
+
+    -fx-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-size: 14px;
+}
+
+/* ----- Welcome test screen ----- */
+.welcome-root {
+    -fx-background-color: -qb-background;
+    -fx-padding: 40;
+}
+
+.welcome-icon {
+    -fx-icon-size: 72;
+    -fx-icon-color: -qb-primary;
+}
+
+.app-title {
+    -fx-font-size: 40px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -qb-primary;
+}
+
+.app-subtitle {
+    -fx-font-size: 16px;
+    -fx-text-fill: -qb-text-muted;
+}
+
+.status-label {
+    -fx-text-fill: -qb-text;
+    -fx-padding: 10 0 10 0;
+}
+
+/* ----- Buttons ----- */
+.primary-button {
+    -fx-background-color: -qb-primary;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-background-radius: 20;
+    -fx-padding: 10 28 10 28;
+    -fx-cursor: hand;
+}
+
+.primary-button:hover {
+    -fx-background-color: -qb-primary-dark;
+}

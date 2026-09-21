@@ -1,0 +1,8 @@
+target/
+.idea/
+*.iml
+.vscode/
+*.class
+*.log
+quickbite.db
+.DS_Store
