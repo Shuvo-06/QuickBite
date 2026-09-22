@@ -4,39 +4,198 @@
     /* Custom colour variables: reuse them anywhere as -qb-primary etc. */
     -qb-primary: #d70f64;
     -qb-primary-dark: #b00c52;
+    -qb-primary-light: #fde7ef;
     -qb-background: #fff5f8;
+    -qb-card: white;
+    -qb-border: #f0d3de;
     -qb-text: #2b2b2b;
     -qb-text-muted: #6b6b6b;
+    -qb-success: #1b9c5a;
+    -qb-error: #c62828;
 
     -fx-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     -fx-font-size: 14px;
 }
 
-/* ----- Welcome test screen ----- */
-.welcome-root {
+/* ----- Layout ----- */
+.app-root,
+.login-root {
     -fx-background-color: -qb-background;
-    -fx-padding: 40;
 }
 
-.welcome-icon {
-    -fx-icon-size: 72;
-    -fx-icon-color: -qb-primary;
+.content-panel { -fx-padding: 20; }
+.side-panel    { -fx-padding: 20 0 20 20; }
+.list-box      { -fx-padding: 4; }
+
+/* ScrollPane with no visible frame, so cards sit directly on the page */
+.clear-scroll {
+    -fx-background: transparent;
+    -fx-background-color: transparent;
+    -fx-padding: 0;
+}
+.clear-scroll > .viewport {
+    -fx-background-color: transparent;
 }
 
+/* ----- Header bar ----- */
+.app-header {
+    -fx-background-color: -qb-primary;
+    -fx-padding: 12 24 12 24;
+}
+.header-icon {
+    -fx-icon-size: 20;
+    -fx-icon-color: white;
+}
+.header-title {
+    -fx-text-fill: white;
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+}
+.header-welcome {
+    -fx-text-fill: white;
+    -fx-font-size: 15px;
+}
+.header-button {
+    -fx-background-color: transparent;
+    -fx-background-radius: 18;
+    -fx-border-color: white;
+    -fx-border-radius: 18;
+    -fx-text-fill: white;
+    -fx-padding: 6 16 6 16;
+    -fx-cursor: hand;
+}
+.header-button:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+}
+.header-button-icon {
+    -fx-icon-size: 14;
+    -fx-icon-color: white;
+}
+
+/* ----- Cards ----- */
+.card {
+    -fx-background-color: -qb-card;
+    -fx-background-radius: 16;
+    -fx-border-color: -qb-border;
+    -fx-border-radius: 16;
+    -fx-padding: 28;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.08), 14, 0, 0, 4);
+}
+
+.restaurant-card {
+    -fx-background-color: -qb-card;
+    -fx-background-radius: 14;
+    -fx-border-color: -qb-border;
+    -fx-border-radius: 14;
+    -fx-padding: 14 16 14 16;
+    -fx-cursor: hand;
+}
+.restaurant-card:hover {
+    -fx-border-color: -qb-primary;
+}
+.restaurant-card.selected {
+    -fx-background-color: -qb-primary-light;
+    -fx-border-color: -qb-primary;
+    -fx-border-width: 2;
+}
+
+.food-card {
+    -fx-background-color: -qb-card;
+    -fx-background-radius: 14;
+    -fx-border-color: -qb-border;
+    -fx-border-radius: 14;
+    -fx-padding: 14 18 14 18;
+}
+
+/* ----- Text styles ----- */
 .app-title {
-    -fx-font-size: 40px;
+    -fx-font-size: 34px;
     -fx-font-weight: bold;
     -fx-text-fill: -qb-primary;
 }
-
 .app-subtitle {
+    -fx-font-size: 14px;
+    -fx-text-fill: -qb-text-muted;
+    -fx-padding: 0 0 12 0;
+}
+.section-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -qb-text;
+}
+.card-title {
     -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -qb-text;
+}
+.card-text {
     -fx-text-fill: -qb-text-muted;
 }
-
-.status-label {
+.item-text {
     -fx-text-fill: -qb-text;
-    -fx-padding: 10 0 10 0;
+}
+.field-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -qb-text-muted;
+    -fx-padding: 6 0 0 0;
+}
+.price-label {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -qb-primary;
+}
+.rating-label {
+    -fx-font-weight: bold;
+    -fx-text-fill: -qb-text;
+    -fx-graphic-text-gap: 6;
+}
+.star-icon {
+    -fx-icon-size: 14;
+    -fx-icon-color: #f5a623;
+}
+.total-label {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -qb-text;
+}
+.order-title {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -qb-primary;
+}
+.status-message {
+    -fx-font-size: 15px;
+    -fx-text-fill: -qb-text;
+    -fx-wrap-text: true;
+}
+.error-label {
+    -fx-text-fill: -qb-error;
+    -fx-font-weight: bold;
+    -fx-wrap-text: true;
+}
+.info-label {
+    -fx-text-fill: -qb-primary;
+    -fx-font-weight: bold;
+}
+.brand-icon {
+    -fx-icon-size: 60;
+    -fx-icon-color: -qb-primary;
+}
+
+/* ----- Input fields ----- */
+.input {
+    -fx-background-color: white;
+    -fx-background-insets: 0;
+    -fx-background-radius: 10;
+    -fx-border-color: -qb-border;
+    -fx-border-radius: 10;
+    -fx-padding: 10 12 10 12;
+}
+.input:focused {
+    -fx-background-color: white;
+    -fx-background-insets: 0;
+    -fx-border-color: -qb-primary;
 }
 
 /* ----- Buttons ----- */
@@ -48,7 +207,61 @@
     -fx-padding: 10 28 10 28;
     -fx-cursor: hand;
 }
-
 .primary-button:hover {
     -fx-background-color: -qb-primary-dark;
+}
+.primary-button-icon {
+    -fx-icon-size: 14;
+    -fx-icon-color: white;
+}
+
+.secondary-button {
+    -fx-background-color: white;
+    -fx-text-fill: -qb-primary;
+    -fx-font-weight: bold;
+    -fx-background-radius: 20;
+    -fx-border-color: -qb-primary;
+    -fx-border-radius: 20;
+    -fx-padding: 10 28 10 28;
+    -fx-cursor: hand;
+}
+.secondary-button:hover {
+    -fx-background-color: -qb-primary-light;
+}
+
+/* ----- Bottom order bar (restaurant window) ----- */
+.order-bar {
+    -fx-background-color: white;
+    -fx-border-color: -qb-border transparent transparent transparent;
+    -fx-padding: 14 24 14 24;
+}
+
+/* ----- Delivery status tracker ----- */
+.step-icon-done    { -fx-icon-size: 22; -fx-icon-color: -qb-success; }
+.step-icon-current { -fx-icon-size: 22; -fx-icon-color: -qb-primary; }
+.step-icon-pending { -fx-icon-size: 22; -fx-icon-color: #c9c9c9; }
+
+.step-text-done    { -fx-text-fill: -qb-text; }
+.step-text-current { -fx-text-fill: -qb-primary; -fx-font-weight: bold; }
+.step-text-pending { -fx-text-fill: #a0a0a0; }
+
+/* ----- Admin dashboard tiles ----- */
+.admin-tile {
+    -fx-background-color: white;
+    -fx-background-radius: 16;
+    -fx-border-color: -qb-border;
+    -fx-border-radius: 16;
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -qb-text;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.06), 10, 0, 0, 3);
+}
+.admin-tile:hover {
+    -fx-background-color: -qb-primary-light;
+    -fx-border-color: -qb-primary;
+}
+.admin-tile-icon {
+    -fx-icon-size: 36;
+    -fx-icon-color: -qb-primary;
 }

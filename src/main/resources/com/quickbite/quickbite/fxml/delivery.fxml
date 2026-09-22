@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<BorderPane styleClass="app-root"
+            xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.quickbite.quickbite.controller.DeliveryController">
+
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="app-header">
+            <FontIcon iconLiteral="fas-utensils" styleClass="header-icon"/>
+            <Label text="QuickBite - Delivery Status" styleClass="header-title"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Logout" styleClass="header-button" onAction="#onLogout">
+                <graphic>
+                    <FontIcon iconLiteral="fas-sign-out-alt" styleClass="header-button-icon"/>
+                </graphic>
+            </Button>
+        </HBox>
+    </top>
+
+    <center>
+        <HBox spacing="24.0" styleClass="content-panel">
+
+            <!-- Left card: order summary -->
+            <VBox spacing="8.0" styleClass="card" HBox.hgrow="ALWAYS" prefWidth="400.0">
+                <Label fx:id="orderTitleLabel" styleClass="order-title"/>
+
+                <Label text="CUSTOMER" styleClass="field-label"/>
+                <Label fx:id="customerLabel" styleClass="card-title"/>
+
+                <Label text="RESTAURANT" styleClass="field-label"/>
+                <Label fx:id="restaurantLabel" styleClass="card-title"/>
+
+                <Label text="ITEMS" styleClass="field-label"/>
+                <VBox fx:id="itemsBox" spacing="6.0"/>
+
+                <Separator/>
+                <HBox alignment="CENTER_LEFT">
+                    <Label text="Total" styleClass="total-label"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Label fx:id="totalLabel" styleClass="total-label"/>
+                </HBox>
+            </VBox>
+
+            <!-- Right card: delivery progress -->
+            <VBox spacing="14.0" styleClass="card" HBox.hgrow="ALWAYS" prefWidth="400.0">
+                <Label text="Delivery Status" styleClass="order-title"/>
+                <Label fx:id="statusMessageLabel" styleClass="status-message"/>
+                <VBox fx:id="stepsBox" spacing="12.0"/>
+                <Region VBox.vgrow="ALWAYS"/>
+                <Button fx:id="nextStatusButton" text="Next Status" styleClass="primary-button"
+                        maxWidth="1.7976931348623157E308" onAction="#onNextStatus"/>
+                <Button text="Back to Restaurants" styleClass="secondary-button"
+                        maxWidth="1.7976931348623157E308" onAction="#onBackToRestaurants"/>
+            </VBox>
+        </HBox>
+    </center>
+</BorderPane>
