@@ -3,18 +3,19 @@ package com.quickbite.quickbite.controller;
 import com.quickbite.quickbite.model.Order;
 import com.quickbite.quickbite.model.OrderItem;
 import com.quickbite.quickbite.model.OrderStatus;
-import com.quickbite.quickbite.service.OrderService;
+import com.quickbite.quickbite.service.OrderTrackingService;
 import com.quickbite.quickbite.util.Navigator;
 import com.quickbite.quickbite.util.PriceFormatter;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.kordamp.ikonli.javafx.FontIcon;
+
+import java.util.function.Consumer;
 
 public class DeliveryController {
 
@@ -25,10 +26,11 @@ public class DeliveryController {
     @FXML private Label totalLabel;
     @FXML private Label statusMessageLabel;
     @FXML private VBox stepsBox;
-    @FXML private Button nextStatusButton;
 
-    private final OrderService orderService = new OrderService();
     private Order order;
+
+    // Stored in a field so the SAME object can be removed again in dispose().
+    private final Consumer<Order> statusListener = this::onOrderUpdated;
 
     /** Called by Navigator right after loading, to pass the order to display. */
     public void setOrder(Order order) {
@@ -54,13 +56,24 @@ public class DeliveryController {
         }
 
         refreshStatus();
+
+        // From now on the tracker tells us whenever an order changes.
+        OrderTrackingService.getInstance().addListener(statusListener);
     }
 
-    /**
-     * Redraws the tracker from order.getStatus(). This is the ONLY method that touches
-     * the status widgets, so in Phase 7 a background task can update the order and simply call
-     * Platform.runLater(this::refreshStatus).
-     */
+    /** Called by Navigator when this window is hidden or replaced. */
+    public void dispose() {
+        OrderTrackingService.getInstance().removeListener(statusListener);
+    }
+
+    /** Called on the JavaFX thread by OrderTrackingService after ANY order changed. */
+    private void onOrderUpdated(Order updatedOrder) {
+        if (updatedOrder.getId() == order.getId()) {   // ignore other orders
+            refreshStatus();
+        }
+    }
+
+    /** Redraws the tracker from order.getStatus(). Only ever called on the JavaFX thread. */
     private void refreshStatus() {
         OrderStatus current = order.getStatus();
         stepsBox.getChildren().clear();
@@ -96,13 +109,6 @@ public class DeliveryController {
         } else {
             statusMessageLabel.setText("Current status: " + current.getLabel());
         }
-        nextStatusButton.setDisable(current.isFinished());
-    }
-
-    @FXML
-    private void onNextStatus() {
-        orderService.advanceStatus(order);
-        refreshStatus();
     }
 
     @FXML

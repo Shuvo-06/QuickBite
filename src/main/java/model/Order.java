@@ -9,7 +9,9 @@ public class Order {
     private final String customerName;
     private final String restaurantName;
     private final List<OrderItem> items = new ArrayList<>();
-    public OrderStatus status = OrderStatus.PLACED;
+
+    // volatile: written by a background thread, read by the JavaFX thread
+    private volatile OrderStatus status = OrderStatus.PLACED;
 
     public Order(int id, String customerName, String restaurantName) {
         this.id = id;

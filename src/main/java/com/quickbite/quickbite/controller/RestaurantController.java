@@ -5,6 +5,7 @@ import com.quickbite.quickbite.model.Order;
 import com.quickbite.quickbite.model.OrderItem;
 import com.quickbite.quickbite.model.Restaurant;
 import com.quickbite.quickbite.service.OrderService;
+import com.quickbite.quickbite.service.OrderTrackingService;
 import com.quickbite.quickbite.service.SampleDataService;
 import com.quickbite.quickbite.util.Navigator;
 import com.quickbite.quickbite.util.PriceFormatter;
@@ -175,8 +176,11 @@ public class RestaurantController {
         confirmation.setTitle("Order placed");
         confirmation.setHeaderText("Order #" + order.getId() + " placed successfully!");
         confirmation.setContentText("Total: " + PriceFormatter.format(order.getTotal())
-                + "\nNext: your delivery status.");
+                + "\nYou will be notified as your order progresses.");
         confirmation.showAndWait();
+
+        // Start the automatic status updates (they run on background threads)
+        OrderTrackingService.getInstance().track(order);
 
         Navigator.showDelivery(order);
     }

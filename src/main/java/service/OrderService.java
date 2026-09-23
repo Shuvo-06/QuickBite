@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class OrderService {
 
-    // AtomicInteger is safe to use from several threads, which we will need in Phase 7.
+    // AtomicInteger is safe to use from several threads.
     private static final AtomicInteger NEXT_ORDER_ID = new AtomicInteger(1001);
 
     /** Creates a new order with status PLACED. */
@@ -28,8 +28,7 @@ public class OrderService {
 
     /**
      * Moves the order to its next status.
-     * Phase 1: called by the "Next Status" button.
-     * Phase 7: a background task will call this on a timer instead.
+     * Called by OrderTrackingService on a background thread.
      */
     public void advanceStatus(Order order) {
         OrderStatus next = order.getStatus().next();

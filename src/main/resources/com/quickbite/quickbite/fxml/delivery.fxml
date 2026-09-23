@@ -51,14 +51,14 @@
                 </HBox>
             </VBox>
 
-            <!-- Right card: delivery progress -->
+            <!-- Right card: delivery progress (updates automatically) -->
             <VBox spacing="14.0" styleClass="card" HBox.hgrow="ALWAYS" prefWidth="400.0">
                 <Label text="Delivery Status" styleClass="order-title"/>
                 <Label fx:id="statusMessageLabel" styleClass="status-message"/>
                 <VBox fx:id="stepsBox" spacing="12.0"/>
                 <Region VBox.vgrow="ALWAYS"/>
-                <Button fx:id="nextStatusButton" text="Next Status" styleClass="primary-button"
-                        maxWidth="1.7976931348623157E308" onAction="#onNextStatus"/>
+                <Label text="This page updates automatically. If you leave it, you will get a notification for every change."
+                       styleClass="card-text" wrapText="true"/>
                 <Button text="Back to Restaurants" styleClass="secondary-button"
                         maxWidth="1.7976931348623157E308" onAction="#onBackToRestaurants"/>
             </VBox>

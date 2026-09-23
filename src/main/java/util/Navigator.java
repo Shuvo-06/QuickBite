@@ -24,7 +24,18 @@ public class Navigator {
     /** The window currently on screen. */
     private static Stage currentStage;
 
+    /** The customer currently logged in (null on the login and admin screens). */
+    private static String currentUsername;
+
     private Navigator() {
+    }
+
+    public static Stage getCurrentStage() {
+        return currentStage;
+    }
+
+    public static String getCurrentUsername() {
+        return currentUsername;
     }
 
     // ------------------------------------------------------------------
@@ -35,6 +46,7 @@ public class Navigator {
     public static void showLogin(Stage stage) {
         try {
             FXMLLoader loader = loadFxml("login.fxml");
+            currentUsername = null;
             showWindow(stage, loader, "QuickBite - Login", 900, 620);
         } catch (IOException e) {
             showLoadError(e);
@@ -51,6 +63,7 @@ public class Navigator {
             FXMLLoader loader = loadFxml("restaurant.fxml");
             RestaurantController controller = loader.getController();
             controller.setUsername(username);          // pass data to the next screen
+            currentUsername = username;
             showWindow(new Stage(), loader, "QuickBite - Restaurants", 1150, 720);
         } catch (IOException e) {
             showLoadError(e);
@@ -62,7 +75,14 @@ public class Navigator {
             FXMLLoader loader = loadFxml("delivery.fxml");
             DeliveryController controller = loader.getController();
             controller.setOrder(order);                // pass data to the next screen
-            showWindow(new Stage(), loader, "QuickBite - Delivery Status", 950, 650);
+
+            Stage stage = new Stage();
+            // When this window disappears (closed by the user OR replaced by the Navigator),
+            // the controller stops listening for order updates.
+            stage.setOnHidden(event -> controller.dispose());
+
+            currentUsername = order.getCustomerName();
+            showWindow(stage, loader, "QuickBite - Delivery Status", 950, 650);
         } catch (IOException e) {
             showLoadError(e);
         }
@@ -71,6 +91,7 @@ public class Navigator {
     public static void showAdmin() {
         try {
             FXMLLoader loader = loadFxml("admin.fxml");
+            currentUsername = null;
             showWindow(new Stage(), loader, "QuickBite - Admin", 950, 650);
         } catch (IOException e) {
             showLoadError(e);
