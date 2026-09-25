@@ -1,12 +1,12 @@
 package com.quickbite.quickbite.controller;
 
+import com.quickbite.quickbite.dao.RestaurantDAO;
 import com.quickbite.quickbite.model.FoodItem;
 import com.quickbite.quickbite.model.Order;
 import com.quickbite.quickbite.model.OrderItem;
 import com.quickbite.quickbite.model.Restaurant;
 import com.quickbite.quickbite.service.OrderService;
 import com.quickbite.quickbite.service.OrderTrackingService;
-import com.quickbite.quickbite.service.SampleDataService;
 import com.quickbite.quickbite.util.Navigator;
 import com.quickbite.quickbite.util.PriceFormatter;
 import javafx.fxml.FXML;
@@ -21,6 +21,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.kordamp.ikonli.javafx.FontIcon;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,7 +36,7 @@ public class RestaurantController {
     @FXML private Label totalLabel;
     @FXML private Label messageLabel;
 
-    private final SampleDataService sampleDataService = new SampleDataService();
+    private final RestaurantDAO restaurantDAO = new RestaurantDAO();
     private final OrderService orderService = new OrderService();
 
     private String username;
@@ -47,8 +48,13 @@ public class RestaurantController {
     /** Runs automatically after the FXML is loaded. */
     @FXML
     private void initialize() {
-        for (Restaurant restaurant : sampleDataService.getRestaurants()) {
-            restaurantList.getChildren().add(createRestaurantCard(restaurant));
+        try {
+            for (Restaurant restaurant : restaurantDAO.findAll()) {
+                restaurantList.getChildren().add(createRestaurantCard(restaurant));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace(); // details for the developer console only
+            messageLabel.setText("Could not load restaurants from the database.");
         }
         updateTotal();
     }
@@ -82,7 +88,6 @@ public class RestaurantController {
     }
 
     private void selectRestaurant(Restaurant restaurant, VBox clickedCard) {
-        // Highlight only the clicked card
         for (Node card : restaurantList.getChildren()) {
             card.getStyleClass().remove("selected");
         }
@@ -120,7 +125,6 @@ public class RestaurantController {
         Label price = new Label(PriceFormatter.format(food.getPrice()));
         price.getStyleClass().add("price-label");
 
-        // Quantity picker: 0 to 10, starts at 0 (= not ordered)
         Spinner<Integer> quantity = new Spinner<>(0, 10, 0);
         quantity.getStyleClass().add(Spinner.STYLE_CLASS_SPLIT_ARROWS_HORIZONTAL);
         quantity.setPrefWidth(110);
@@ -155,7 +159,6 @@ public class RestaurantController {
             return;
         }
 
-        // Collect every food whose quantity is above 0
         List<OrderItem> items = new ArrayList<>();
         for (Map.Entry<FoodItem, Spinner<Integer>> entry : quantitySpinners.entrySet()) {
             int quantity = entry.getValue().getValue();
@@ -170,7 +173,14 @@ public class RestaurantController {
             return;
         }
 
-        Order order = orderService.createOrder(username, selectedRestaurant, items);
+        Order order;
+        try {
+            order = orderService.createOrder(username, selectedRestaurant, items);
+        } catch (SQLException e) {
+            e.printStackTrace(); // details for the developer console only
+            messageLabel.setText("Could not save your order. Please try again.");
+            return;
+        }
 
         Alert confirmation = new Alert(Alert.AlertType.INFORMATION);
         confirmation.setTitle("Order placed");
@@ -179,9 +189,7 @@ public class RestaurantController {
                 + "\nYou will be notified as your order progresses.");
         confirmation.showAndWait();
 
-        // Start the automatic status updates (they run on background threads)
         OrderTrackingService.getInstance().track(order);
-
         Navigator.showDelivery(order);
     }
 

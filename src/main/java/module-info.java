@@ -8,6 +8,10 @@ module com.quickbite.quickbite {
     requires org.kordamp.ikonli.javafx;
     requires org.kordamp.ikonli.fontawesome5;
 
+    // JDBC API (java.sql.*) and the SQLite driver
+    requires java.sql;
+    requires org.xerial.sqlitejdbc;
+
     // FXMLLoader uses reflection to create controllers and inject @FXML fields,
     // so packages holding controllers must be "opened" to javafx.fxml.
     opens com.quickbite.quickbite to javafx.fxml;
