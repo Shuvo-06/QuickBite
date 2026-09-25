@@ -12,14 +12,9 @@ public class LoginController {
     private static final String ADMIN_USERNAME = "admin";
     private static final String ADMIN_PASSWORD = "admin123";
 
-    @FXML
-    private TextField usernameField;
-
-    @FXML
-    private PasswordField passwordField;
-
-    @FXML
-    private Label messageLabel;
+    @FXML private TextField usernameField;
+    @FXML private PasswordField passwordField;
+    @FXML private Label messageLabel;
 
     /** Phase 1: any non-empty username and password is accepted for customers. */
     @FXML
@@ -32,6 +27,11 @@ public class LoginController {
             return;
         }
         Navigator.showRestaurants(username);
+    }
+
+    @FXML
+    private void onRestaurantLogin() {
+        Navigator.showRestaurantLogin();
     }
 
     @FXML

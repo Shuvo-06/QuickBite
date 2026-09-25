@@ -15,19 +15,20 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 /**
- * Moves every placed order through its statuses automatically, in the background.
+ * Moves an order through its statuses automatically, in the background, once it has been
+ * accepted by the restaurant (status CONFIRMED or later).
  *
  * Threads involved:
  *   - JavaFX Application Thread : the UI. Never blocked by this class.
  *   - order-tracker-N threads   : a ScheduledExecutorService pool that changes the order status
  *
- * Flow for each step:
- *   background thread: wait a random time -> change the status
- *        -> Platform.runLater(...) -> UI thread tells all listeners (pop-up, delivery window)
+ * Flow for each automatic step:
+ *   background thread: wait a random time -> change the status, save it to SQLite
+ *        -> Platform.runLater(...) -> UI thread tells all listeners (pop-up, delivery window, dashboard)
  */
 public class OrderTrackingService {
 
-    // Random delay between two status changes (short, so it suits a classroom demo)
+    // Random delay between two automatic status changes (short, so it suits a classroom demo)
     private static final int MIN_DELAY_MS = 3000;
     private static final int MAX_DELAY_MS = 8000;
 
@@ -67,11 +68,23 @@ public class OrderTrackingService {
         listeners.remove(listener);
     }
 
+    /**
+     * Tells every listener about an order, without changing its status.
+     * Used by the restaurant dashboard right after Accept/Reject, so the customer
+     * finds out immediately instead of waiting for the next automatic step.
+     * Must be called on the JavaFX Application Thread (button handlers already are).
+     */
+    public void notifyListeners(Order order) {
+        for (Consumer<Order> listener : listeners) {
+            listener.accept(order);
+        }
+    }
+
     // ------------------------------------------------------------------
-    // Tracking
+    // Automatic tracking
     // ------------------------------------------------------------------
 
-    /** Starts the automatic progression of a newly placed order. */
+    /** Starts the automatic progression of an order that the restaurant has just accepted. */
     public void track(Order order) {
         scheduleNextStep(order);
     }
@@ -94,19 +107,14 @@ public class OrderTrackingService {
     /** Runs on a BACKGROUND thread (order-tracker-N), never on the UI thread. */
     private void runStep(Order order) {
         try {
-            // In the SQLite phase, the database UPDATE goes here: it belongs on the background thread.
-            orderService.advanceStatus(order);
+            orderService.advanceStatus(order); // updates memory AND the database
             OrderStatus newStatus = order.getStatus();
 
             System.out.println("[" + Thread.currentThread().getName() + "] Order #"
                     + order.getId() + " -> " + newStatus);
 
             // Only the JavaFX Application Thread may touch the UI, so hand the notification over.
-            Platform.runLater(() -> {
-                for (Consumer<Order> listener : listeners) {
-                    listener.accept(order);
-                }
-            });
+            Platform.runLater(() -> notifyListeners(order));
 
             if (!newStatus.isFinished()) {
                 scheduleNextStep(order);

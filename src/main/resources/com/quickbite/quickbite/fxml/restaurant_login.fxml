@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.PasswordField?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
+
+<StackPane styleClass="login-root"
+           xmlns="http://javafx.com/javafx/21"
+           xmlns:fx="http://javafx.com/fxml/1"
+           fx:controller="com.quickbite.quickbite.controller.RestaurantLoginController">
+
+    <VBox alignment="CENTER" spacing="8.0" styleClass="card"
+          prefWidth="380.0" maxWidth="380.0" maxHeight="-Infinity">
+
+        <FontIcon iconLiteral="fas-store" styleClass="brand-icon"/>
+        <Label text="Restaurant Login" styleClass="app-title"/>
+        <Label text="Manage your incoming orders." styleClass="app-subtitle"/>
+
+        <VBox spacing="6.0">
+            <Label text="Restaurant" styleClass="field-label"/>
+            <ComboBox fx:id="restaurantComboBox" styleClass="input" maxWidth="1.7976931348623157E308"/>
+
+            <Label text="Password" styleClass="field-label"/>
+            <PasswordField fx:id="passwordField" promptText="Enter restaurant password"
+                           styleClass="input" onAction="#onLogin"/>
+        </VBox>
+
+        <Label fx:id="messageLabel" styleClass="error-label"/>
+
+        <Button text="Login" styleClass="primary-button"
+                maxWidth="1.7976931348623157E308" onAction="#onLogin"/>
+        <Button text="Back" styleClass="secondary-button"
+                maxWidth="1.7976931348623157E308" onAction="#onBack"/>
+
+        <Label text="Demo password for every restaurant: restaurant123"
+               styleClass="card-text" wrapText="true"/>
+    </VBox>
+</StackPane>

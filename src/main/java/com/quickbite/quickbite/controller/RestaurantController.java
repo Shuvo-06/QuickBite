@@ -6,7 +6,6 @@ import com.quickbite.quickbite.model.Order;
 import com.quickbite.quickbite.model.OrderItem;
 import com.quickbite.quickbite.model.Restaurant;
 import com.quickbite.quickbite.service.OrderService;
-import com.quickbite.quickbite.service.OrderTrackingService;
 import com.quickbite.quickbite.util.FoodIconUtil;
 import com.quickbite.quickbite.util.Navigator;
 import com.quickbite.quickbite.util.PriceFormatter;
@@ -142,14 +141,14 @@ public class RestaurantController {
         clickedCard.getStyleClass().add("selected");
 
         selectedRestaurant = restaurant;
-        quantities.clear();          // a fresh cart for the newly chosen restaurant
+        quantities.clear();
         messageLabel.setText("");
         menuTitleLabel.setText(restaurant.getName());
 
         if (foodSearchField.getText().isEmpty()) {
             renderFoodList(restaurant.getMenu());
         } else {
-            foodSearchField.clear(); // triggers filterFoods(""), which shows the full new menu
+            foodSearchField.clear();
         }
         updateTotal();
     }
@@ -158,7 +157,6 @@ public class RestaurantController {
     // Menu
     // ------------------------------------------------------------------
 
-    /** Shows only foods (of the selected restaurant) whose name or description contains the search text. */
     private void filterFoods(String query) {
         if (selectedRestaurant == null) {
             return;
@@ -206,7 +204,6 @@ public class RestaurantController {
         Label price = new Label(PriceFormatter.format(food.getPrice()));
         price.getStyleClass().add("price-label");
 
-        // Quantity picker: starts at whatever was chosen before (0 if never chosen)
         Spinner<Integer> quantity = new Spinner<>(0, 10, quantities.getOrDefault(food, 0));
         quantity.getStyleClass().add(Spinner.STYLE_CLASS_SPLIT_ARROWS_HORIZONTAL);
         quantity.setPrefWidth(110);
@@ -271,10 +268,10 @@ public class RestaurantController {
         confirmation.setTitle("Order placed");
         confirmation.setHeaderText("Order #" + order.getId() + " placed successfully!");
         confirmation.setContentText("Total: " + PriceFormatter.format(order.getTotal())
-                + "\nYou will be notified as your order progresses.");
+                + "\nWaiting for " + selectedRestaurant.getName() + " to confirm your order.");
         confirmation.showAndWait();
 
-        OrderTrackingService.getInstance().track(order);
+        // Tracking does NOT start yet: the restaurant must Accept it first (see the dashboard).
         Navigator.showDelivery(order);
     }
 

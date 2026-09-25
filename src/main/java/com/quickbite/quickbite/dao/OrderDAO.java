@@ -12,6 +12,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 public class OrderDAO {
@@ -58,7 +59,7 @@ public class OrderDAO {
 
                 conn.commit();
 
-                Order order = new Order(orderId, customerName, restaurant.getName());
+                Order order = new Order(orderId, customerName, restaurant.getId(), restaurant.getName());
                 for (OrderItem item : items) {
                     order.addItem(item);
                 }
@@ -73,7 +74,7 @@ public class OrderDAO {
         }
     }
 
-    /** Persists a status change. Called from a BACKGROUND thread by OrderTrackingService. */
+    /** Persists a status change. Called from a background thread by OrderTrackingService, and from the dashboard. */
     public void updateStatus(int orderId, OrderStatus status) throws SQLException {
         String sql = "UPDATE orders SET status = ? WHERE id = ?";
         try (Connection conn = DatabaseManager.getConnection();
@@ -82,5 +83,48 @@ public class OrderDAO {
             ps.setInt(2, orderId);
             ps.executeUpdate();
         }
+    }
+
+    /** Loads every order placed at one restaurant, most recent first, each with its items. Used by the dashboard. */
+    public List<Order> findByRestaurant(int restaurantId) throws SQLException {
+        String orderSql = "SELECT id, customer_name, restaurant_id, restaurant_name, status "
+                + "FROM orders WHERE restaurant_id = ? ORDER BY id DESC";
+        String itemSql = "SELECT food_name, quantity, unit_price FROM order_items WHERE order_id = ?";
+
+        List<Order> orders = new ArrayList<>();
+
+        try (Connection conn = DatabaseManager.getConnection()) {
+
+            try (PreparedStatement ps = conn.prepareStatement(orderSql)) {
+                ps.setInt(1, restaurantId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        Order order = new Order(
+                                rs.getInt("id"),
+                                rs.getString("customer_name"),
+                                rs.getInt("restaurant_id"),
+                                rs.getString("restaurant_name"));
+                        order.setStatus(OrderStatus.valueOf(rs.getString("status")));
+                        orders.add(order);
+                    }
+                }
+            }
+
+            try (PreparedStatement ps = conn.prepareStatement(itemSql)) {
+                for (Order order : orders) {
+                    ps.setInt(1, order.getId());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        while (rs.next()) {
+                            order.addItem(new OrderItem(
+                                    rs.getString("food_name"),
+                                    rs.getInt("quantity"),
+                                    rs.getDouble("unit_price")));
+                        }
+                    }
+                }
+            }
+        }
+
+        return orders;
     }
 }

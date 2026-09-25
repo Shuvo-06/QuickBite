@@ -68,7 +68,7 @@ public class DeliveryController {
 
     /** Called on the JavaFX thread by OrderTrackingService after ANY order changed. */
     private void onOrderUpdated(Order updatedOrder) {
-        if (updatedOrder.getId() == order.getId()) {   // ignore other orders
+        if (updatedOrder.getId() == order.getId()) {
             refreshStatus();
         }
     }
@@ -78,7 +78,16 @@ public class DeliveryController {
         OrderStatus current = order.getStatus();
         stepsBox.getChildren().clear();
 
-        for (OrderStatus step : OrderStatus.values()) {
+        if (current == OrderStatus.REJECTED) {
+            Label rejected = new Label("This order was rejected by the restaurant.");
+            rejected.getStyleClass().add("error-label");
+            rejected.setWrapText(true);
+            stepsBox.getChildren().add(rejected);
+            statusMessageLabel.setText("Sorry, " + order.getRestaurantName() + " was unable to accept this order.");
+            return;
+        }
+
+        for (OrderStatus step : OrderStatus.mainSequence()) {
             String state;
             String iconCode;
 
@@ -106,6 +115,8 @@ public class DeliveryController {
 
         if (current.isFinished()) {
             statusMessageLabel.setText("Your order has been delivered. Enjoy your meal!");
+        } else if (current == OrderStatus.PLACED) {
+            statusMessageLabel.setText("Waiting for the restaurant to confirm your order...");
         } else {
             statusMessageLabel.setText("Current status: " + current.getLabel());
         }
