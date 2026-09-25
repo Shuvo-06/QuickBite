@@ -3,11 +3,13 @@ package com.quickbite.quickbite.util;
 import com.quickbite.quickbite.controller.DeliveryController;
 import com.quickbite.quickbite.controller.RestaurantController;
 import com.quickbite.quickbite.model.Order;
+import javafx.animation.FadeTransition;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 import java.io.IOException;
 import java.net.URL;
@@ -113,7 +115,7 @@ public class Navigator {
         return loader;
     }
 
-    /** Puts the loaded screen into a Scene, shows it, then closes the previous window. */
+    /** Puts the loaded screen into a Scene, fades it in, shows it, then closes the previous window. */
     private static void showWindow(Stage stage, FXMLLoader loader, String title, double width, double height) {
         Parent root = loader.getRoot();
         Scene scene = new Scene(root, width, height);
@@ -128,16 +130,23 @@ public class Navigator {
         stage.setMinWidth(800);
         stage.setMinHeight(550);
         stage.setScene(scene);
-        stage.show();                                   // show the new window FIRST...
+
+        // Fade the new screen in, so it appears smoothly instead of popping into view.
+        root.setOpacity(0);
+        stage.show();
+        FadeTransition fadeIn = new FadeTransition(Duration.millis(350), root);
+        fadeIn.setFromValue(0);
+        fadeIn.setToValue(1);
+        fadeIn.play();
 
         if (currentStage != null && currentStage != stage) {
-            currentStage.close();                       // ...then close the old one
+            currentStage.close();                       // close the old window after the new one shows
         }
         currentStage = stage;
     }
 
     private static void showLoadError(IOException e) {
-        e.printStackTrace();                            // details for the developer console only
+        e.printStackTrace(); // details for the developer console only
         Alert alert = new Alert(Alert.AlertType.ERROR, "Sorry, this screen could not be opened.");
         alert.setHeaderText("Screen error");
         alert.showAndWait();

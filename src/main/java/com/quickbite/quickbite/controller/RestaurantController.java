@@ -7,6 +7,7 @@ import com.quickbite.quickbite.model.OrderItem;
 import com.quickbite.quickbite.model.Restaurant;
 import com.quickbite.quickbite.service.OrderService;
 import com.quickbite.quickbite.service.OrderTrackingService;
+import com.quickbite.quickbite.util.FoodIconUtil;
 import com.quickbite.quickbite.util.Navigator;
 import com.quickbite.quickbite.util.PriceFormatter;
 import javafx.fxml.FXML;
@@ -15,6 +16,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -25,13 +27,16 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class RestaurantController {
 
     @FXML private Label welcomeLabel;
+    @FXML private TextField restaurantSearchField;
     @FXML private VBox restaurantList;
     @FXML private Label menuTitleLabel;
+    @FXML private TextField foodSearchField;
     @FXML private VBox foodList;
     @FXML private Label totalLabel;
     @FXML private Label messageLabel;
@@ -42,21 +47,21 @@ public class RestaurantController {
     private String username;
     private Restaurant selectedRestaurant;
 
-    // One quantity spinner per food on screen (LinkedHashMap keeps menu order)
-    private final Map<FoodItem, Spinner<Integer>> quantitySpinners = new LinkedHashMap<>();
+    // Every restaurant loaded from the database, kept so search can filter without re-querying.
+    private List<Restaurant> allRestaurants = new ArrayList<>();
+
+    // Chosen quantity per food item. Kept separate from the spinner widgets themselves,
+    // so a quantity is remembered even after the food card is rebuilt by a search filter.
+    private final Map<FoodItem, Integer> quantities = new LinkedHashMap<>();
 
     /** Runs automatically after the FXML is loaded. */
     @FXML
     private void initialize() {
-        try {
-            for (Restaurant restaurant : restaurantDAO.findAll()) {
-                restaurantList.getChildren().add(createRestaurantCard(restaurant));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace(); // details for the developer console only
-            messageLabel.setText("Could not load restaurants from the database.");
-        }
+        loadRestaurants();
         updateTotal();
+
+        restaurantSearchField.textProperty().addListener((obs, oldValue, newValue) -> filterRestaurants(newValue));
+        foodSearchField.textProperty().addListener((obs, oldValue, newValue) -> filterFoods(newValue));
     }
 
     /** Called by Navigator right after loading, to pass the logged-in username. */
@@ -68,6 +73,49 @@ public class RestaurantController {
     // ------------------------------------------------------------------
     // Restaurants
     // ------------------------------------------------------------------
+
+    private void loadRestaurants() {
+        try {
+            allRestaurants = restaurantDAO.findAll();
+            renderRestaurantList(allRestaurants);
+        } catch (SQLException e) {
+            e.printStackTrace(); // details for the developer console only
+            messageLabel.setText("Could not load restaurants from the database.");
+        }
+    }
+
+    /** Shows only restaurants whose name or description contains the search text. */
+    private void filterRestaurants(String query) {
+        String needle = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+        List<Restaurant> filtered = new ArrayList<>();
+        for (Restaurant restaurant : allRestaurants) {
+            if (needle.isEmpty()
+                    || restaurant.getName().toLowerCase(Locale.ROOT).contains(needle)
+                    || restaurant.getDescription().toLowerCase(Locale.ROOT).contains(needle)) {
+                filtered.add(restaurant);
+            }
+        }
+        renderRestaurantList(filtered);
+    }
+
+    private void renderRestaurantList(List<Restaurant> restaurants) {
+        restaurantList.getChildren().clear();
+
+        if (restaurants.isEmpty()) {
+            Label empty = new Label("No restaurants match your search.");
+            empty.getStyleClass().add("card-text");
+            restaurantList.getChildren().add(empty);
+            return;
+        }
+
+        for (Restaurant restaurant : restaurants) {
+            VBox card = createRestaurantCard(restaurant);
+            if (selectedRestaurant != null && selectedRestaurant.getId() == restaurant.getId()) {
+                card.getStyleClass().add("selected"); // keep the highlight while searching
+            }
+            restaurantList.getChildren().add(card);
+        }
+    }
 
     private VBox createRestaurantCard(Restaurant restaurant) {
         Label name = new Label(restaurant.getName());
@@ -94,28 +142,61 @@ public class RestaurantController {
         clickedCard.getStyleClass().add("selected");
 
         selectedRestaurant = restaurant;
-        showMenu(restaurant);
+        quantities.clear();          // a fresh cart for the newly chosen restaurant
+        messageLabel.setText("");
+        menuTitleLabel.setText(restaurant.getName());
+
+        if (foodSearchField.getText().isEmpty()) {
+            renderFoodList(restaurant.getMenu());
+        } else {
+            foodSearchField.clear(); // triggers filterFoods(""), which shows the full new menu
+        }
+        updateTotal();
     }
 
     // ------------------------------------------------------------------
     // Menu
     // ------------------------------------------------------------------
 
-    private void showMenu(Restaurant restaurant) {
-        menuTitleLabel.setText(restaurant.getName());
-        messageLabel.setText("");
-        foodList.getChildren().clear();
-        quantitySpinners.clear();
+    /** Shows only foods (of the selected restaurant) whose name or description contains the search text. */
+    private void filterFoods(String query) {
+        if (selectedRestaurant == null) {
+            return;
+        }
+        String needle = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
+        List<FoodItem> filtered = new ArrayList<>();
+        for (FoodItem food : selectedRestaurant.getMenu()) {
+            if (needle.isEmpty()
+                    || food.getName().toLowerCase(Locale.ROOT).contains(needle)
+                    || food.getDescription().toLowerCase(Locale.ROOT).contains(needle)) {
+                filtered.add(food);
+            }
+        }
+        renderFoodList(filtered);
+    }
 
-        for (FoodItem food : restaurant.getMenu()) {
+    private void renderFoodList(List<FoodItem> items) {
+        foodList.getChildren().clear();
+
+        if (items.isEmpty()) {
+            Label empty = new Label("No food items match your search.");
+            empty.getStyleClass().add("card-text");
+            foodList.getChildren().add(empty);
+            return;
+        }
+
+        for (FoodItem food : items) {
             foodList.getChildren().add(createFoodCard(food));
         }
-        updateTotal();
     }
 
     private HBox createFoodCard(FoodItem food) {
-        Label name = new Label(food.getName());
+        FontIcon icon = new FontIcon(FoodIconUtil.iconFor(food.getName()));
+        icon.getStyleClass().add("food-icon");
+
+        Label name = new Label(food.getName(), icon);
         name.getStyleClass().add("card-title");
+        name.setGraphicTextGap(8);
 
         Label description = new Label(food.getDescription());
         description.getStyleClass().add("card-text");
@@ -125,11 +206,14 @@ public class RestaurantController {
         Label price = new Label(PriceFormatter.format(food.getPrice()));
         price.getStyleClass().add("price-label");
 
-        Spinner<Integer> quantity = new Spinner<>(0, 10, 0);
+        // Quantity picker: starts at whatever was chosen before (0 if never chosen)
+        Spinner<Integer> quantity = new Spinner<>(0, 10, quantities.getOrDefault(food, 0));
         quantity.getStyleClass().add(Spinner.STYLE_CLASS_SPLIT_ARROWS_HORIZONTAL);
         quantity.setPrefWidth(110);
-        quantity.valueProperty().addListener((observable, oldValue, newValue) -> updateTotal());
-        quantitySpinners.put(food, quantity);
+        quantity.valueProperty().addListener((obs, oldValue, newValue) -> {
+            quantities.put(food, newValue);
+            updateTotal();
+        });
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -142,8 +226,10 @@ public class RestaurantController {
 
     private void updateTotal() {
         double total = 0;
-        for (Map.Entry<FoodItem, Spinner<Integer>> entry : quantitySpinners.entrySet()) {
-            total += entry.getKey().getPrice() * entry.getValue().getValue();
+        if (selectedRestaurant != null) {
+            for (FoodItem food : selectedRestaurant.getMenu()) {
+                total += food.getPrice() * quantities.getOrDefault(food, 0);
+            }
         }
         totalLabel.setText("Total: " + PriceFormatter.format(total));
     }
@@ -160,10 +246,9 @@ public class RestaurantController {
         }
 
         List<OrderItem> items = new ArrayList<>();
-        for (Map.Entry<FoodItem, Spinner<Integer>> entry : quantitySpinners.entrySet()) {
-            int quantity = entry.getValue().getValue();
+        for (FoodItem food : selectedRestaurant.getMenu()) {
+            int quantity = quantities.getOrDefault(food, 0);
             if (quantity > 0) {
-                FoodItem food = entry.getKey();
                 items.add(new OrderItem(food.getName(), quantity, food.getPrice()));
             }
         }
