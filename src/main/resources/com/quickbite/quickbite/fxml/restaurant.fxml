@@ -22,6 +22,11 @@
             <Region HBox.hgrow="ALWAYS"/>
             <FontIcon iconLiteral="fas-user" styleClass="header-icon"/>
             <Label fx:id="welcomeLabel" styleClass="header-welcome"/>
+            <Button text="Order History" styleClass="header-button" onAction="#onOrderHistory">
+                <graphic>
+                    <FontIcon iconLiteral="fas-receipt" styleClass="header-button-icon"/>
+                </graphic>
+            </Button>
             <Button text="Logout" styleClass="header-button" onAction="#onLogout">
                 <graphic>
                     <FontIcon iconLiteral="fas-sign-out-alt" styleClass="header-button-icon"/>

@@ -19,6 +19,11 @@
             <FontIcon iconLiteral="fas-utensils" styleClass="header-icon"/>
             <Label text="QuickBite - Delivery Status" styleClass="header-title"/>
             <Region HBox.hgrow="ALWAYS"/>
+            <Button text="Order History" styleClass="header-button" onAction="#onOrderHistory">
+                <graphic>
+                    <FontIcon iconLiteral="fas-receipt" styleClass="header-button-icon"/>
+                </graphic>
+            </Button>
             <Button text="Logout" styleClass="header-button" onAction="#onLogout">
                 <graphic>
                     <FontIcon iconLiteral="fas-sign-out-alt" styleClass="header-button-icon"/>

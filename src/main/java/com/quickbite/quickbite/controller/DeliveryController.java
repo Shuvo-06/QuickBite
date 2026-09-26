@@ -29,6 +29,11 @@ public class DeliveryController {
 
     private Order order;
 
+    @FXML
+    private void onOrderHistory() {
+        Navigator.showOrderHistory(order.getCustomerName());
+    }
+
     // Stored in a field so the SAME object can be removed again in dispose().
     private final Consumer<Order> statusListener = this::onOrderUpdated;
 

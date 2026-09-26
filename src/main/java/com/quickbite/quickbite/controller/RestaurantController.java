@@ -53,6 +53,11 @@ public class RestaurantController {
     // so a quantity is remembered even after the food card is rebuilt by a search filter.
     private final Map<FoodItem, Integer> quantities = new LinkedHashMap<>();
 
+    @FXML
+    private void onOrderHistory() {
+        Navigator.showOrderHistory(username);
+    }
+
     /** Runs automatically after the FXML is loaded. */
     @FXML
     private void initialize() {

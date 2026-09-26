@@ -2,7 +2,6 @@ package com.quickbite.quickbite.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import com.quickbite.quickbite.model.OrderItem;
 
 /** An order kept in memory, backed by the orders/order_items tables in SQLite. */
 public class Order {
@@ -14,6 +13,10 @@ public class Order {
 
     // volatile: written by a background thread, read by the JavaFX thread
     private volatile OrderStatus status = OrderStatus.PLACED;
+
+    // When this order was placed, formatted for display. Only set by OrderDAO.findByCustomer();
+    // null elsewhere, which is fine since only the order history screen reads it.
+    private String createdAt;
 
     public Order(int id, String customerName, int restaurantId, String restaurantName) {
         this.id = id;
@@ -43,4 +46,7 @@ public class Order {
 
     public OrderStatus getStatus() { return status; }
     public void setStatus(OrderStatus status) { this.status = status; }
+
+    public String getCreatedAt() { return createdAt; }
+    public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
 }

@@ -1,6 +1,7 @@
 package com.quickbite.quickbite.util;
 
 import com.quickbite.quickbite.controller.DeliveryController;
+import com.quickbite.quickbite.controller.OrderHistoryController;
 import com.quickbite.quickbite.controller.RestaurantController;
 import com.quickbite.quickbite.controller.RestaurantDashboardController;
 import com.quickbite.quickbite.model.Order;
@@ -90,6 +91,18 @@ public class Navigator {
         }
     }
 
+    public static void showOrderHistory(String username) {
+        try {
+            FXMLLoader loader = loadFxml("order_history.fxml");
+            OrderHistoryController controller = loader.getController();
+            controller.setUsername(username);
+            currentUsername = username;
+            showWindow(new Stage(), loader, "QuickBite - Order History", 1050, 680);
+        } catch (IOException e) {
+            showLoadError(e);
+        }
+    }
+
     public static void showAdmin() {
         try {
             FXMLLoader loader = loadFxml("admin.fxml");
@@ -119,7 +132,7 @@ public class Navigator {
             stage.setOnHidden(event -> controller.dispose());
 
             controller.setRestaurant(restaurant);
-            currentUsername = null; // restaurant staff, not a customer: no order pop-ups here
+            currentUsername = null;
             showWindow(stage, loader, "QuickBite - " + restaurant.getName() + " Dashboard", 1150, 720);
         } catch (IOException e) {
             showLoadError(e);
