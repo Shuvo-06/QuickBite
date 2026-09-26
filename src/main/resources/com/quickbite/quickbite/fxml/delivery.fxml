@@ -15,7 +15,7 @@
             fx:controller="com.quickbite.quickbite.controller.DeliveryController">
 
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="app-header">
+        <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="app-header">
             <FontIcon iconLiteral="fas-utensils" styleClass="header-icon"/>
             <Label text="QuickBite - Delivery Status" styleClass="header-title"/>
             <Region HBox.hgrow="ALWAYS"/>

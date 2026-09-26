@@ -16,12 +16,17 @@
             fx:controller="com.quickbite.quickbite.controller.RestaurantController">
 
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="app-header">
+        <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="app-header">
             <FontIcon iconLiteral="fas-utensils" styleClass="header-icon"/>
             <Label text="QuickBite" styleClass="header-title"/>
             <Region HBox.hgrow="ALWAYS"/>
             <FontIcon iconLiteral="fas-user" styleClass="header-icon"/>
             <Label fx:id="welcomeLabel" styleClass="header-welcome"/>
+            <Button fx:id="discoverButton" text="Discover a Dish" styleClass="header-button" onAction="#onDiscoverDish">
+                <graphic>
+                    <FontIcon iconLiteral="fas-lightbulb" styleClass="header-button-icon"/>
+                </graphic>
+            </Button>
             <Button text="Order History" styleClass="header-button" onAction="#onOrderHistory">
                 <graphic>
                     <FontIcon iconLiteral="fas-receipt" styleClass="header-button-icon"/>

@@ -1,5 +1,6 @@
 package com.quickbite.quickbite;
 
+import com.quickbite.quickbite.api.ApiService;
 import com.quickbite.quickbite.database.DatabaseInitializer;
 import com.quickbite.quickbite.service.OrderTrackingService;
 import com.quickbite.quickbite.util.Navigator;
@@ -41,11 +42,12 @@ public class QuickBiteApp extends Application {
 
     /**
      * JavaFX calls stop() when the last window is closed.
-     * We must stop the background threads here.
+     * Every background thread pool the app created must be shut down here.
      */
     @Override
     public void stop() {
         OrderTrackingService.getInstance().shutdown();
+        ApiService.getInstance().shutdown();
         System.out.println("QuickBite is closing.");
     }
 }

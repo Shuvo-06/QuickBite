@@ -55,7 +55,8 @@ public class DatabaseInitializer {
                     )
                     """);
 
-            // customer_name is plain text for now: there is no real user-account system yet.
+            // customer_name is plain text: there is no real user-account system yet (a later
+            // phase, adding registration, would replace this with a proper user_id foreign key).
             stmt.execute("""
                     CREATE TABLE IF NOT EXISTS orders (
                         id              INTEGER PRIMARY KEY AUTOINCREMENT,

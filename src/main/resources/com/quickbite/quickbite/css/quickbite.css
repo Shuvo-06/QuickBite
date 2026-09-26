@@ -198,6 +198,30 @@
     -fx-border-color: -qb-primary;
 }
 
+/* ----- Search boxes ----- */
+.search-field-box {
+    -fx-alignment: center-left;
+}
+.search-icon {
+    -fx-icon-size: 14;
+    -fx-icon-color: -qb-text-muted;
+}
+.search-text-field {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+    -fx-padding: 0;
+}
+.search-text-field:focused {
+    -fx-background-color: transparent;
+    -fx-border-color: transparent;
+}
+
+/* ----- Food item icon ----- */
+.food-icon {
+    -fx-icon-size: 15;
+    -fx-icon-color: -qb-primary;
+}
+
 /* ----- Buttons ----- */
 .primary-button {
     -fx-background-color: -qb-primary;
@@ -263,28 +287,5 @@
 }
 .admin-tile-icon {
     -fx-icon-size: 36;
-    -fx-icon-color: -qb-primary;
-}
-/* ----- Search boxes ----- */
-.search-field-box {
-    -fx-alignment: center-left;
-}
-.search-icon {
-    -fx-icon-size: 14;
-    -fx-icon-color: -qb-text-muted;
-}
-.search-text-field {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-    -fx-padding: 0;
-}
-.search-text-field:focused {
-    -fx-background-color: transparent;
-    -fx-border-color: transparent;
-}
-
-/* ----- Food item icon ----- */
-.food-icon {
-    -fx-icon-size: 15;
     -fx-icon-color: -qb-primary;
 }

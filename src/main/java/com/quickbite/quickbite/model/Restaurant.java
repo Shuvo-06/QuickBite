@@ -2,7 +2,6 @@ package com.quickbite.quickbite.model;
 
 import java.util.ArrayList;
 import java.util.List;
-import com.quickbite.quickbite.model.FoodItem;
 
 public class Restaurant {
     private final int id;
@@ -28,7 +27,7 @@ public class Restaurant {
     public double getRating() { return rating; }
     public List<FoodItem> getMenu() { return menu; }
 
-    /** Used by ComboBox and any other control that needs a plain text label for a restaurant. */
+    /** Used by ComboBox (restaurant login) and any other control that needs a plain text label. */
     @Override
     public String toString() {
         return name;

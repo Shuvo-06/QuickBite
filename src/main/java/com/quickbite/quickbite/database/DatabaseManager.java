@@ -24,8 +24,8 @@ public class DatabaseManager {
         try (Statement stmt = conn.createStatement()) {
             // SQLite ignores foreign keys unless this is switched on for EACH connection.
             stmt.execute("PRAGMA foreign_keys = ON");
-            // If the background status-update thread is writing at the same instant, wait
-            // up to 5 seconds instead of failing immediately.
+            // If another thread (e.g. the order-tracker background thread) is writing at the same
+            // instant, wait up to 5 seconds instead of failing immediately.
             stmt.execute("PRAGMA busy_timeout = 5000");
         }
         return conn;

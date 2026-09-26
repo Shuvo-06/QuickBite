@@ -67,7 +67,7 @@ public class Navigator {
         try {
             FXMLLoader loader = loadFxml("restaurant.fxml");
             RestaurantController controller = loader.getController();
-            controller.setUsername(username);
+            controller.setUsername(username);          // pass data to the next screen
             currentUsername = username;
             showWindow(new Stage(), loader, "QuickBite - Restaurants", 1150, 720);
         } catch (IOException e) {
@@ -79,9 +79,11 @@ public class Navigator {
         try {
             FXMLLoader loader = loadFxml("delivery.fxml");
             DeliveryController controller = loader.getController();
-            controller.setOrder(order);
+            controller.setOrder(order);                // pass data to the next screen
 
             Stage stage = new Stage();
+            // When this window disappears (closed by the user OR replaced by the Navigator),
+            // the controller stops listening for order updates.
             stage.setOnHidden(event -> controller.dispose());
 
             currentUsername = order.getCustomerName();
@@ -132,7 +134,7 @@ public class Navigator {
             stage.setOnHidden(event -> controller.dispose());
 
             controller.setRestaurant(restaurant);
-            currentUsername = null;
+            currentUsername = null; // restaurant staff, not a customer: no order pop-ups here
             showWindow(stage, loader, "QuickBite - " + restaurant.getName() + " Dashboard", 1150, 720);
         } catch (IOException e) {
             showLoadError(e);
@@ -143,6 +145,7 @@ public class Navigator {
     // Helpers
     // ------------------------------------------------------------------
 
+    /** Loads an FXML file. This also creates the controller and runs its initialize(). */
     private static FXMLLoader loadFxml(String fileName) throws IOException {
         URL url = Navigator.class.getResource(FXML_FOLDER + fileName);
         if (url == null) {
@@ -169,6 +172,7 @@ public class Navigator {
         stage.setMinHeight(550);
         stage.setScene(scene);
 
+        // Fade the new screen in, so it appears smoothly instead of popping into view.
         root.setOpacity(0);
         stage.show();
         FadeTransition fadeIn = new FadeTransition(Duration.millis(350), root);
@@ -177,13 +181,13 @@ public class Navigator {
         fadeIn.play();
 
         if (currentStage != null && currentStage != stage) {
-            currentStage.close();
+            currentStage.close();                       // close the old window after the new one shows
         }
         currentStage = stage;
     }
 
     private static void showLoadError(IOException e) {
-        e.printStackTrace();
+        e.printStackTrace(); // details for the developer console only
         Alert alert = new Alert(Alert.AlertType.ERROR, "Sorry, this screen could not be opened.");
         alert.setHeaderText("Screen error");
         alert.showAndWait();

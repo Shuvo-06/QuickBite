@@ -8,7 +8,8 @@ import javafx.scene.control.TextField;
 
 public class LoginController {
 
-    // Phase-1 placeholder credentials. NOT real security: a later phase replaces this.
+    // Phase-1 placeholder credentials. NOT real security: a later phase (real registration
+    // with a users table) would replace this.
     private static final String ADMIN_USERNAME = "admin";
     private static final String ADMIN_PASSWORD = "admin123";
 
@@ -16,7 +17,7 @@ public class LoginController {
     @FXML private PasswordField passwordField;
     @FXML private Label messageLabel;
 
-    /** Phase 1: any non-empty username and password is accepted for customers. */
+    /** Any non-empty username and password is accepted for customers. */
     @FXML
     private void onCustomerLogin() {
         String username = usernameField.getText().trim();

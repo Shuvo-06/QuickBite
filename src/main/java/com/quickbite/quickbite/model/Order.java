@@ -11,7 +11,7 @@ public class Order {
     private final String restaurantName;
     private final List<OrderItem> items = new ArrayList<>();
 
-    // volatile: written by a background thread, read by the JavaFX thread
+    // volatile: written by a background thread (OrderTrackingService), read by the JavaFX thread.
     private volatile OrderStatus status = OrderStatus.PLACED;
 
     // When this order was placed, formatted for display. Only set by OrderDAO.findByCustomer();

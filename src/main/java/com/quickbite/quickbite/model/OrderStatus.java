@@ -3,7 +3,7 @@ package com.quickbite.quickbite.model;
 /**
  * Every step an order can be in.
  * The normal flow is PLACED -> CONFIRMED -> PREPARING -> READY -> OUT_FOR_DELIVERY -> DELIVERED.
- * REJECTED is a separate dead end set by the restaurant instead of the automatic tracker.
+ * REJECTED is a separate dead end, set by the restaurant instead of the automatic tracker.
  */
 public enum OrderStatus {
     PLACED("Order Placed"),
@@ -20,6 +20,7 @@ public enum OrderStatus {
         this.label = label;
     }
 
+    /** Text shown to the customer and the restaurant. */
     public String getLabel() {
         return label;
     }

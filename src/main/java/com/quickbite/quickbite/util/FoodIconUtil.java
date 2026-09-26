@@ -20,6 +20,6 @@ public class FoodIconUtil {
         if (name.contains("doi") || name.contains("sweet") || name.contains("dessert")) return "fas-ice-cream";
         if (name.contains("soup")) return "fas-mug-hot";
 
-        return "fas-utensils"; // safe default for pizza dough... err, rice, noodles, fries, etc.
+        return "fas-utensils"; // safe default for rice, noodles, fries, etc.
     }
 }

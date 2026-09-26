@@ -1,5 +1,7 @@
 package com.quickbite.quickbite.controller;
 
+import com.quickbite.quickbite.api.ApiService;
+import com.quickbite.quickbite.api.MealDto;
 import com.quickbite.quickbite.dao.RestaurantDAO;
 import com.quickbite.quickbite.model.FoodItem;
 import com.quickbite.quickbite.model.Order;
@@ -13,9 +15,12 @@ import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -39,6 +44,7 @@ public class RestaurantController {
     @FXML private VBox foodList;
     @FXML private Label totalLabel;
     @FXML private Label messageLabel;
+    @FXML private Button discoverButton;
 
     private final RestaurantDAO restaurantDAO = new RestaurantDAO();
     private final OrderService orderService = new OrderService();
@@ -52,11 +58,6 @@ public class RestaurantController {
     // Chosen quantity per food item. Kept separate from the spinner widgets themselves,
     // so a quantity is remembered even after the food card is rebuilt by a search filter.
     private final Map<FoodItem, Integer> quantities = new LinkedHashMap<>();
-
-    @FXML
-    private void onOrderHistory() {
-        Navigator.showOrderHistory(username);
-    }
 
     /** Runs automatically after the FXML is loaded. */
     @FXML
@@ -146,14 +147,14 @@ public class RestaurantController {
         clickedCard.getStyleClass().add("selected");
 
         selectedRestaurant = restaurant;
-        quantities.clear();
+        quantities.clear(); // a fresh cart for the newly chosen restaurant
         messageLabel.setText("");
         menuTitleLabel.setText(restaurant.getName());
 
         if (foodSearchField.getText().isEmpty()) {
             renderFoodList(restaurant.getMenu());
         } else {
-            foodSearchField.clear();
+            foodSearchField.clear(); // triggers filterFoods(""), which shows the full new menu
         }
         updateTotal();
     }
@@ -162,6 +163,7 @@ public class RestaurantController {
     // Menu
     // ------------------------------------------------------------------
 
+    /** Shows only foods (of the selected restaurant) whose name or description contains the search text. */
     private void filterFoods(String query) {
         if (selectedRestaurant == null) {
             return;
@@ -209,6 +211,7 @@ public class RestaurantController {
         Label price = new Label(PriceFormatter.format(food.getPrice()));
         price.getStyleClass().add("price-label");
 
+        // Quantity picker: starts at whatever was chosen before (0 if never chosen)
         Spinner<Integer> quantity = new Spinner<>(0, 10, quantities.getOrDefault(food, 0));
         quantity.getStyleClass().add(Spinner.STYLE_CLASS_SPLIT_ARROWS_HORIZONTAL);
         quantity.setPrefWidth(110);
@@ -237,7 +240,7 @@ public class RestaurantController {
     }
 
     // ------------------------------------------------------------------
-    // Actions
+    // Ordering
     // ------------------------------------------------------------------
 
     @FXML
@@ -278,6 +281,77 @@ public class RestaurantController {
 
         // Tracking does NOT start yet: the restaurant must Accept it first (see the dashboard).
         Navigator.showDelivery(order);
+    }
+
+    // ------------------------------------------------------------------
+    // Phase 8: external API (TheMealDB) - JSON, HttpClient, concurrency
+    // ------------------------------------------------------------------
+
+    /**
+     * Optional feature: fetches a random real dish (name, category, photo) from a public API.
+     * Runs entirely on a background thread pool; the rest of the app works fine even if this fails.
+     */
+    @FXML
+    private void onDiscoverDish() {
+        discoverButton.setDisable(true);
+        messageLabel.setText("Looking for a dish suggestion...");
+
+        ApiService.getInstance().fetchRandomMeal(
+                this::showMealDialog,
+                error -> {
+                    discoverButton.setDisable(false);
+                    messageLabel.setText(error);
+                }
+        );
+    }
+
+    /** Called on the JavaFX thread once the API call succeeds. */
+    private void showMealDialog(MealDto meal) {
+        discoverButton.setDisable(false);
+        messageLabel.setText("");
+
+        VBox content = new VBox(10);
+        content.setPrefWidth(360);
+
+        if (meal.getImageUrl() != null && !meal.getImageUrl().isBlank()) {
+            // JavaFX's Image class can load a remote URL on its own background thread
+            // (the trailing "true" flag), so no extra ExecutorService work is needed just for this.
+            ImageView imageView = new ImageView(new Image(meal.getImageUrl(), 320, 200, true, true, true));
+            content.getChildren().add(imageView);
+        }
+
+        Label category = new Label("Category: " + meal.getCategory() + "   |   Origin: " + meal.getArea());
+        category.getStyleClass().add("card-text");
+        category.setWrapText(true);
+
+        Label instructions = new Label(shorten(meal.getInstructions(), 400));
+        instructions.setWrapText(true);
+        instructions.getStyleClass().add("card-text");
+
+        content.getChildren().addAll(category, instructions);
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Discover a Dish");
+        alert.setHeaderText(meal.getName());
+        alert.getDialogPane().setContent(content);
+        alert.showAndWait();
+    }
+
+    private String shorten(String text, int maxLength) {
+        if (text == null) {
+            return "";
+        }
+        String trimmed = text.trim();
+        return trimmed.length() <= maxLength ? trimmed : trimmed.substring(0, maxLength) + "...";
+    }
+
+    // ------------------------------------------------------------------
+    // Navigation
+    // ------------------------------------------------------------------
+
+    @FXML
+    private void onOrderHistory() {
+        Navigator.showOrderHistory(username);
     }
 
     @FXML

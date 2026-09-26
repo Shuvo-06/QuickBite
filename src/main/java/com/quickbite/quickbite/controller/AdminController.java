@@ -4,7 +4,7 @@ import com.quickbite.quickbite.util.Navigator;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 
-/** Placeholder admin dashboard. Each section gets a real screen in a later phase. */
+/** Placeholder admin dashboard. Each section can be given a real screen in a later phase. */
 public class AdminController {
 
     @FXML
