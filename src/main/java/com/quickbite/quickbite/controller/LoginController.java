@@ -1,23 +1,24 @@
 package com.quickbite.quickbite.controller;
 
+import com.quickbite.quickbite.dao.UserDAO;
+import com.quickbite.quickbite.model.User;
 import com.quickbite.quickbite.util.Navigator;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 
-public class LoginController {
+import java.sql.SQLException;
 
-    // Phase-1 placeholder credentials. NOT real security: a later phase (real registration
-    // with a users table) would replace this.
-    private static final String ADMIN_USERNAME = "admin";
-    private static final String ADMIN_PASSWORD = "admin123";
+public class LoginController {
 
     @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
     @FXML private Label messageLabel;
 
-    /** Any non-empty username and password is accepted for customers. */
+    private final UserDAO userDAO = new UserDAO();
+
+    /** Customer accounts are now real, persistent rows in the users table (see UserDAO). */
     @FXML
     private void onCustomerLogin() {
         String username = usernameField.getText().trim();
@@ -27,7 +28,32 @@ public class LoginController {
             messageLabel.setText("Please enter both a username and a password.");
             return;
         }
-        Navigator.showRestaurants(username);
+
+        User account;
+        try {
+            account = userDAO.findByUsername(username);
+        } catch (SQLException e) {
+            e.printStackTrace(); // details for the developer console only
+            messageLabel.setText("Could not reach the database. Please try again.");
+            return;
+        }
+
+        if (account == null) {
+            messageLabel.setText("No account with that username. Use Create Account below.");
+            return;
+        }
+        if (!account.getPassword().equals(password)) {
+            messageLabel.setText("Incorrect password.");
+            passwordField.clear();
+            return;
+        }
+
+        Navigator.showRestaurants(account.getUsername());
+    }
+
+    @FXML
+    private void onGoToRegister() {
+        Navigator.showRegister();
     }
 
     @FXML
@@ -35,16 +61,21 @@ public class LoginController {
         Navigator.showRestaurantLogin();
     }
 
+    /**
+     * The admin login intentionally performs NO password check: any non-empty username and
+     * password logs straight into the admin dashboard. This is a deliberate simplification asked
+     * for explicitly, matching the same "Phase 1 placeholder" spirit as the rest of the login
+     * screens — it is not meant to represent real security.
+     */
     @FXML
     private void onAdminLogin() {
         String username = usernameField.getText().trim();
         String password = passwordField.getText();
 
-        if (ADMIN_USERNAME.equals(username) && ADMIN_PASSWORD.equals(password)) {
-            Navigator.showAdmin();
-        } else {
-            messageLabel.setText("Invalid admin username or password.");
-            passwordField.clear();
+        if (username.isEmpty() || password.isEmpty()) {
+            messageLabel.setText("Please enter both a username and a password for admin access.");
+            return;
         }
+        Navigator.showAdmin();
     }
 }

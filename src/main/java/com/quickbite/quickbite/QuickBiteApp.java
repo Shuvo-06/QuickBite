@@ -2,6 +2,7 @@ package com.quickbite.quickbite;
 
 import com.quickbite.quickbite.api.ApiService;
 import com.quickbite.quickbite.database.DatabaseInitializer;
+import com.quickbite.quickbite.service.NetworkMonitor;
 import com.quickbite.quickbite.service.OrderTrackingService;
 import com.quickbite.quickbite.util.Navigator;
 import com.quickbite.quickbite.util.NotificationHelper;
@@ -36,6 +37,11 @@ public class QuickBiteApp extends Application {
         // Show a pop-up whenever ANY order changes status (registered once for the whole app)
         OrderTrackingService.getInstance().addListener(NotificationHelper::showOrderUpdate);
 
+        // NetworkMonitor's background checker starts as soon as its singleton is first touched;
+        // touching it here (rather than waiting for a screen to need it) means the very first
+        // check has already had a moment to run before the customer reaches the ordering screen.
+        NetworkMonitor.getInstance();
+
         // The login screen uses the primary stage that JavaFX gives us.
         Navigator.showLogin(primaryStage);
     }
@@ -48,6 +54,7 @@ public class QuickBiteApp extends Application {
     public void stop() {
         OrderTrackingService.getInstance().shutdown();
         ApiService.getInstance().shutdown();
+        NetworkMonitor.getInstance().shutdown();
         System.out.println("QuickBite is closing.");
     }
 }

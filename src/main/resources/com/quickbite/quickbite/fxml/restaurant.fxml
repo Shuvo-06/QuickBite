@@ -16,28 +16,34 @@
             fx:controller="com.quickbite.quickbite.controller.RestaurantController">
 
     <top>
-        <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="app-header">
-            <FontIcon iconLiteral="fas-utensils" styleClass="header-icon"/>
-            <Label text="QuickBite" styleClass="header-title"/>
-            <Region HBox.hgrow="ALWAYS"/>
-            <FontIcon iconLiteral="fas-user" styleClass="header-icon"/>
-            <Label fx:id="welcomeLabel" styleClass="header-welcome"/>
-            <Button fx:id="discoverButton" text="Discover a Dish" styleClass="header-button" onAction="#onDiscoverDish">
-                <graphic>
-                    <FontIcon iconLiteral="fas-lightbulb" styleClass="header-button-icon"/>
-                </graphic>
-            </Button>
-            <Button text="Order History" styleClass="header-button" onAction="#onOrderHistory">
-                <graphic>
-                    <FontIcon iconLiteral="fas-receipt" styleClass="header-button-icon"/>
-                </graphic>
-            </Button>
-            <Button text="Logout" styleClass="header-button" onAction="#onLogout">
-                <graphic>
-                    <FontIcon iconLiteral="fas-sign-out-alt" styleClass="header-button-icon"/>
-                </graphic>
-            </Button>
-        </HBox>
+        <VBox>
+            <Label fx:id="offlineBar" styleClass="offline-bar" maxWidth="1.7976931348623157E308"
+                   text="You are currently offline. Connect to the internet to order food."
+                   visible="false" managed="false"/>
+
+            <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="app-header">
+                <FontIcon iconLiteral="fas-utensils" styleClass="header-icon"/>
+                <Label text="QuickBite" styleClass="header-title"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <FontIcon iconLiteral="fas-user" styleClass="header-icon"/>
+                <Label fx:id="welcomeLabel" styleClass="header-welcome"/>
+                <Button fx:id="discoverButton" text="Discover a Dish" styleClass="header-button" onAction="#onDiscoverDish">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-lightbulb" styleClass="header-button-icon"/>
+                    </graphic>
+                </Button>
+                <Button text="Order History" styleClass="header-button" onAction="#onOrderHistory">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-receipt" styleClass="header-button-icon"/>
+                    </graphic>
+                </Button>
+                <Button text="Logout" styleClass="header-button" onAction="#onLogout">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-sign-out-alt" styleClass="header-button-icon"/>
+                    </graphic>
+                </Button>
+            </HBox>
+        </VBox>
     </top>
 
     <left>
@@ -75,15 +81,23 @@
     </center>
 
     <bottom>
-        <HBox alignment="CENTER_LEFT" spacing="20.0" styleClass="order-bar">
-            <Label fx:id="totalLabel" styleClass="total-label"/>
-            <Label fx:id="messageLabel" styleClass="error-label"/>
-            <Region HBox.hgrow="ALWAYS"/>
-            <Button text="Place Order" styleClass="primary-button" onAction="#onPlaceOrder">
-                <graphic>
-                    <FontIcon iconLiteral="fas-shopping-bag" styleClass="primary-button-icon"/>
-                </graphic>
-            </Button>
-        </HBox>
+        <VBox styleClass="order-bar" spacing="8.0">
+            <HBox alignment="CENTER_LEFT" spacing="8.0">
+                <FontIcon iconLiteral="fas-tag" styleClass="search-icon"/>
+                <TextField fx:id="couponField" promptText="Coupon code (try WELCOME10)" styleClass="input" prefWidth="220.0"/>
+                <Button text="Apply" styleClass="secondary-button" onAction="#onApplyCoupon"/>
+                <Label fx:id="couponMessageLabel" styleClass="info-label"/>
+            </HBox>
+            <HBox alignment="CENTER_LEFT" spacing="20.0">
+                <Label fx:id="totalLabel" styleClass="total-label"/>
+                <Label fx:id="messageLabel" styleClass="error-label"/>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Button text="Place Order" styleClass="primary-button" onAction="#onPlaceOrder">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-shopping-bag" styleClass="primary-button-icon"/>
+                    </graphic>
+                </Button>
+            </HBox>
+        </VBox>
     </bottom>
 </BorderPane>

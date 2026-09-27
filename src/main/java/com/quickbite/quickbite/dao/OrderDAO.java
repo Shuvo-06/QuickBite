@@ -20,16 +20,22 @@ public class OrderDAO {
 
     private static final DateTimeFormatter DISPLAY_FORMAT = DateTimeFormatter.ofPattern("MMM d, yyyy HH:mm");
 
-    /** Saves a new order and its items in one transaction, then returns the order with its database-assigned id. */
-    public Order insertOrder(String customerName, Restaurant restaurant, List<OrderItem> items) throws SQLException {
-        String orderSql = "INSERT INTO orders (customer_name, restaurant_id, restaurant_name, total, status, created_at) "
-                + "VALUES (?, ?, ?, ?, ?, ?)";
+    /**
+     * Saves a new order and its items in one transaction, then returns the order with its
+     * database-assigned id. couponCode/discountAmount may be null/0 when no coupon was applied.
+     */
+    public Order insertOrder(String customerName, Restaurant restaurant, List<OrderItem> items,
+                             String couponCode, double discountAmount) throws SQLException {
+        String orderSql = "INSERT INTO orders "
+                + "(customer_name, restaurant_id, restaurant_name, total, status, created_at, coupon_code, discount_amount) "
+                + "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
         String itemSql = "INSERT INTO order_items (order_id, food_name, quantity, unit_price) VALUES (?, ?, ?, ?)";
 
-        double total = 0;
+        double subtotal = 0;
         for (OrderItem item : items) {
-            total += item.getSubtotal();
+            subtotal += item.getSubtotal();
         }
+        double total = Math.max(0, subtotal - discountAmount);
         LocalDateTime now = LocalDateTime.now();
 
         try (Connection conn = DatabaseManager.getConnection()) {
@@ -43,6 +49,8 @@ public class OrderDAO {
                     ps.setDouble(4, total);
                     ps.setString(5, OrderStatus.PLACED.name());
                     ps.setString(6, now.toString());
+                    ps.setString(7, couponCode);
+                    ps.setDouble(8, discountAmount);
                     ps.executeUpdate();
                     try (ResultSet keys = ps.getGeneratedKeys()) {
                         keys.next();
@@ -67,6 +75,8 @@ public class OrderDAO {
                 for (OrderItem item : items) {
                     order.addItem(item);
                 }
+                order.setCouponCode(couponCode);
+                order.setDiscountAmount(discountAmount);
                 order.setCreatedAt(now.format(DISPLAY_FORMAT));
                 return order;
 
@@ -92,51 +102,22 @@ public class OrderDAO {
 
     /** Loads every order placed at one restaurant, most recent first, each with its items. Used by the dashboard. */
     public List<Order> findByRestaurant(int restaurantId) throws SQLException {
-        String orderSql = "SELECT id, customer_name, restaurant_id, restaurant_name, status "
-                + "FROM orders WHERE restaurant_id = ? ORDER BY id DESC";
-        String itemSql = "SELECT food_name, quantity, unit_price FROM order_items WHERE order_id = ?";
-
-        List<Order> orders = new ArrayList<>();
-
-        try (Connection conn = DatabaseManager.getConnection()) {
-
-            try (PreparedStatement ps = conn.prepareStatement(orderSql)) {
-                ps.setInt(1, restaurantId);
-                try (ResultSet rs = ps.executeQuery()) {
-                    while (rs.next()) {
-                        Order order = new Order(
-                                rs.getInt("id"),
-                                rs.getString("customer_name"),
-                                rs.getInt("restaurant_id"),
-                                rs.getString("restaurant_name"));
-                        order.setStatus(OrderStatus.valueOf(rs.getString("status")));
-                        orders.add(order);
-                    }
-                }
-            }
-
-            try (PreparedStatement ps = conn.prepareStatement(itemSql)) {
-                for (Order order : orders) {
-                    ps.setInt(1, order.getId());
-                    try (ResultSet rs = ps.executeQuery()) {
-                        while (rs.next()) {
-                            order.addItem(new OrderItem(
-                                    rs.getString("food_name"),
-                                    rs.getInt("quantity"),
-                                    rs.getDouble("unit_price")));
-                        }
-                    }
-                }
-            }
-        }
-
-        return orders;
+        return findOrders("WHERE restaurant_id = ?", restaurantId, null);
     }
 
     /** Loads every order placed by one customer, most recent first, each with its items. Used by order history. */
     public List<Order> findByCustomer(String customerName) throws SQLException {
-        String orderSql = "SELECT id, customer_name, restaurant_id, restaurant_name, status, created_at "
-                + "FROM orders WHERE customer_name = ? ORDER BY id DESC";
+        return findOrders("WHERE customer_name = ?", null, customerName);
+    }
+
+    /** Loads every order in the whole system, most recent first. Used by the admin "track every order" view. */
+    public List<Order> findAll() throws SQLException {
+        return findOrders("", null, null);
+    }
+
+    private List<Order> findOrders(String whereClause, Integer restaurantId, String customerName) throws SQLException {
+        String orderSql = "SELECT id, customer_name, restaurant_id, restaurant_name, status, created_at, "
+                + "coupon_code, discount_amount FROM orders " + whereClause + " ORDER BY id DESC";
         String itemSql = "SELECT food_name, quantity, unit_price FROM order_items WHERE order_id = ?";
 
         List<Order> orders = new ArrayList<>();
@@ -144,7 +125,11 @@ public class OrderDAO {
         try (Connection conn = DatabaseManager.getConnection()) {
 
             try (PreparedStatement ps = conn.prepareStatement(orderSql)) {
-                ps.setString(1, customerName);
+                if (restaurantId != null) {
+                    ps.setInt(1, restaurantId);
+                } else if (customerName != null) {
+                    ps.setString(1, customerName);
+                }
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
                         Order order = new Order(
@@ -154,6 +139,8 @@ public class OrderDAO {
                                 rs.getString("restaurant_name"));
                         order.setStatus(OrderStatus.valueOf(rs.getString("status")));
                         order.setCreatedAt(formatTimestamp(rs.getString("created_at")));
+                        order.setCouponCode(rs.getString("coupon_code"));
+                        order.setDiscountAmount(rs.getDouble("discount_amount"));
                         orders.add(order);
                     }
                 }
@@ -182,7 +169,7 @@ public class OrderDAO {
         try {
             return LocalDateTime.parse(raw).format(DISPLAY_FORMAT);
         } catch (Exception e) {
-            return raw; // fall back to the raw text rather than crashing the history screen
+            return raw; // fall back to the raw text rather than crashing the screen
         }
     }
 }

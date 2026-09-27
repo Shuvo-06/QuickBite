@@ -11,6 +11,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.image.Image;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
@@ -25,6 +26,7 @@ public class Navigator {
 
     private static final String FXML_FOLDER = "/com/quickbite/quickbite/fxml/";
     private static final String MAIN_CSS = "/com/quickbite/quickbite/css/quickbite.css";
+    private static final String APP_ICON = "/com/quickbite/quickbite/images/app_icon.png";
 
     /** The window currently on screen. */
     private static Stage currentStage;
@@ -52,7 +54,7 @@ public class Navigator {
         try {
             FXMLLoader loader = loadFxml("login.fxml");
             currentUsername = null;
-            showWindow(stage, loader, "QuickBite - Login", 900, 620);
+            showWindow(stage, loader, "QuickBite - Login", 1000, 640);
         } catch (IOException e) {
             showLoadError(e);
         }
@@ -63,13 +65,27 @@ public class Navigator {
         showLogin(new Stage());
     }
 
+    public static void showRegister() {
+        try {
+            FXMLLoader loader = loadFxml("register.fxml");
+            currentUsername = null;
+            showWindow(new Stage(), loader, "QuickBite - Create Account", 1000, 640);
+        } catch (IOException e) {
+            showLoadError(e);
+        }
+    }
+
     public static void showRestaurants(String username) {
         try {
             FXMLLoader loader = loadFxml("restaurant.fxml");
             RestaurantController controller = loader.getController();
             controller.setUsername(username);          // pass data to the next screen
+
+            Stage stage = new Stage();
+            stage.setOnHidden(event -> controller.dispose());
+
             currentUsername = username;
-            showWindow(new Stage(), loader, "QuickBite - Restaurants", 1150, 720);
+            showWindow(stage, loader, "QuickBite - Restaurants", 1150, 720);
         } catch (IOException e) {
             showLoadError(e);
         }
@@ -108,8 +124,13 @@ public class Navigator {
     public static void showAdmin() {
         try {
             FXMLLoader loader = loadFxml("admin.fxml");
+            com.quickbite.quickbite.controller.AdminController controller = loader.getController();
+
+            Stage stage = new Stage();
+            stage.setOnHidden(event -> controller.dispose());
+
             currentUsername = null;
-            showWindow(new Stage(), loader, "QuickBite - Admin", 950, 650);
+            showWindow(stage, loader, "QuickBite - Admin", 1200, 750);
         } catch (IOException e) {
             showLoadError(e);
         }
@@ -166,6 +187,11 @@ public class Navigator {
             throw new IllegalStateException("Cannot find CSS file: " + MAIN_CSS);
         }
         scene.getStylesheets().add(cssUrl.toExternalForm());
+
+        URL iconUrl = Navigator.class.getResource(APP_ICON);
+        if (iconUrl != null) {
+            stage.getIcons().add(new Image(iconUrl.toExternalForm()));
+        }
 
         stage.setTitle(title);
         stage.setMinWidth(800);

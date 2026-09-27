@@ -1,17 +1,21 @@
 /* ===== QuickBite theme ===== */
 
 .root {
-    /* Custom colour variables: reuse them anywhere as -qb-primary etc. */
-    -qb-primary: #d70f64;
-    -qb-primary-dark: #b00c52;
-    -qb-primary-light: #fde7ef;
-    -qb-background: #fff5f8;
+    /* Custom colour variables: reuse them anywhere as -qb-primary etc.
+       Recolored to a hot tomato-red / chili palette — warmer and more appetite-triggering
+       than the previous pink, while keeping every other rule (which only reference these
+       variables) working unchanged. */
+    -qb-primary: #e63946;
+    -qb-primary-dark: #b5182a;
+    -qb-primary-light: #fde2e2;
+    -qb-background: #fff8f0;
     -qb-card: white;
-    -qb-border: #f0d3de;
+    -qb-border: #f3d8c7;
     -qb-text: #2b2b2b;
     -qb-text-muted: #6b6b6b;
     -qb-success: #1b9c5a;
     -qb-error: #c62828;
+    -qb-accent: #ff9f1c;
 
     -fx-font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
     -fx-font-size: 14px;
@@ -21,6 +25,24 @@
 .app-root,
 .login-root {
     -fx-background-color: -qb-background;
+}
+
+/* The uploaded food-delivery illustration, used as the login/register backdrop.
+   background-position + size keep it filling the window without distortion. */
+.login-bg-image {
+    -fx-background-image: url("../images/login_background.png");
+    -fx-background-position: center;
+    -fx-background-size: cover;
+    -fx-background-repeat: no-repeat;
+}
+
+/* Red banner shown across the top of the restaurant screen while offline. */
+.offline-bar {
+    -fx-background-color: -qb-error;
+    -fx-text-fill: white;
+    -fx-font-weight: bold;
+    -fx-padding: 8 20 8 20;
+    -fx-alignment: center;
 }
 
 .content-panel { -fx-padding: 20; }

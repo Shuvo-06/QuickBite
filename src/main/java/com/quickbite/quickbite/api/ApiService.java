@@ -97,7 +97,7 @@ public class ApiService {
         if (e instanceof HttpTimeoutException) {
             return "The recipe service took too long to respond.";
         }
-        if (e instanceof ConnectException || e instanceof IOException) {
+        if (e instanceof IOException) {
             return "Could not reach the recipe service. Please check your internet connection.";
         }
         return "Something went wrong while fetching a dish.";

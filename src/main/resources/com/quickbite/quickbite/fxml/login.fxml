@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Hyperlink?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.PasswordField?>
 <?import javafx.scene.control.TextField?>
@@ -8,13 +10,16 @@
 <?import javafx.scene.layout.VBox?>
 <?import org.kordamp.ikonli.javafx.FontIcon?>
 
-<StackPane styleClass="login-root"
+<StackPane styleClass="login-root, login-bg-image" alignment="CENTER_LEFT"
            xmlns="http://javafx.com/javafx/21"
            xmlns:fx="http://javafx.com/fxml/1"
            fx:controller="com.quickbite.quickbite.controller.LoginController">
 
-    <VBox alignment="CENTER" spacing="8.0" styleClass="card"
+    <VBox alignment="CENTER" spacing="8.0" styleClass="card" StackPane.alignment="CENTER_LEFT"
           prefWidth="380.0" maxWidth="380.0" maxHeight="-Infinity">
+        <StackPane.margin>
+            <Insets left="60.0"/>
+        </StackPane.margin>
 
         <FontIcon iconLiteral="fas-utensils" styleClass="brand-icon"/>
         <Label text="QuickBite" styleClass="app-title"/>
@@ -34,12 +39,10 @@
 
         <Button text="Customer Login" styleClass="primary-button"
                 maxWidth="1.7976931348623157E308" onAction="#onCustomerLogin"/>
+        <Hyperlink text="New here? Create an account" onAction="#onGoToRegister"/>
         <Button text="Restaurant Login" styleClass="secondary-button"
                 maxWidth="1.7976931348623157E308" onAction="#onRestaurantLogin"/>
         <Button text="Admin Login" styleClass="secondary-button"
                 maxWidth="1.7976931348623157E308" onAction="#onAdminLogin"/>
-
-        <Label text="Customers: any username and password works for now."
-               styleClass="card-text" wrapText="true"/>
     </VBox>
 </StackPane>

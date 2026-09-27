@@ -18,6 +18,12 @@ public class Order {
     // null elsewhere, which is fine since only the order history screen reads it.
     private String createdAt;
 
+    // The coupon code used at checkout, or null if none was applied.
+    private String couponCode;
+
+    // Amount subtracted from the item subtotal because of a coupon. 0 if none was applied.
+    private double discountAmount = 0;
+
     public Order(int id, String customerName, int restaurantId, String restaurantName) {
         this.id = id;
         this.customerName = customerName;
@@ -29,13 +35,18 @@ public class Order {
         items.add(item);
     }
 
-    /** The total is always calculated from the items, so it can never get out of sync. */
-    public double getTotal() {
-        double total = 0;
+    /** The subtotal, calculated from the items, before any coupon discount. */
+    public double getSubtotal() {
+        double subtotal = 0;
         for (OrderItem item : items) {
-            total += item.getSubtotal();
+            subtotal += item.getSubtotal();
         }
-        return total;
+        return subtotal;
+    }
+
+    /** The amount actually charged: item subtotal minus the coupon discount, never below zero. */
+    public double getTotal() {
+        return Math.max(0, getSubtotal() - discountAmount);
     }
 
     public int getId() { return id; }
@@ -49,4 +60,10 @@ public class Order {
 
     public String getCreatedAt() { return createdAt; }
     public void setCreatedAt(String createdAt) { this.createdAt = createdAt; }
+
+    public String getCouponCode() { return couponCode; }
+    public void setCouponCode(String couponCode) { this.couponCode = couponCode; }
+
+    public double getDiscountAmount() { return discountAmount; }
+    public void setDiscountAmount(double discountAmount) { this.discountAmount = discountAmount; }
 }
