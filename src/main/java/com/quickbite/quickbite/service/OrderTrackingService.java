@@ -26,7 +26,7 @@ import java.util.function.Consumer;
  *   background thread: wait a random time -> change the status, save it to SQLite
  *        -> Platform.runLater(...) -> UI thread tells all listeners (pop-up, delivery window, dashboard)
  */
-public class OrderTrackingService {
+public class OrderTrackingService implements Shutdownable {
 
     // Random delay between two automatic status changes (short, so it suits a classroom demo)
     private static final int MIN_DELAY_MS = 3000;
@@ -41,6 +41,11 @@ public class OrderTrackingService {
     private final List<Consumer<Order>> listeners = new CopyOnWriteArrayList<>();
 
     private final AtomicInteger threadCounter = new AtomicInteger(1);
+
+    @Override
+    public void shutdown() {
+        scheduler.shutdownNow();
+    }
 
     // A pool of 2 background threads. Daemon threads never keep the JVM alive after the window closes.
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2, runnable -> {
@@ -87,11 +92,6 @@ public class OrderTrackingService {
     /** Starts the automatic progression of an order that the restaurant has just accepted. */
     public void track(Order order) {
         scheduleNextStep(order);
-    }
-
-    /** Stops all background work. Called from QuickBiteApp.stop() when the application closes. */
-    public void shutdown() {
-        scheduler.shutdownNow();
     }
 
     private void scheduleNextStep(Order order) {

@@ -3,7 +3,7 @@ package com.quickbite.quickbite.model;
 import java.time.LocalDate;
 
 /** A discount coupon created by the admin, valid for a percentage off between two dates. */
-public class Coupon {
+public class Coupon implements Discountable {
     private final int id;
     private final String code;
     private final int discountPercent;
@@ -31,5 +31,11 @@ public class Coupon {
     public boolean isCurrentlyValid() {
         LocalDate today = LocalDate.now();
         return active && !today.isBefore(startDate) && !today.isAfter(endDate);
+    }
+
+    /** Discountable implementation: how much this coupon takes off a given subtotal right now. */
+    @Override
+    public double discountFor(double subtotal) {
+        return isCurrentlyValid() ? subtotal * discountPercent / 100.0 : 0;
     }
 }

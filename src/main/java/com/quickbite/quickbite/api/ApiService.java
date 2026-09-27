@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
+import com.quickbite.quickbite.service.Shutdownable;
 
 /**
  * Talks to TheMealDB (https://www.themealdb.com/api.php), a free public API that needs no API key.
@@ -28,7 +29,7 @@ import java.util.function.Consumer;
  * class. If the API or the network is unavailable, only "Discover a Dish" is affected, and the
  * failure is reported back through onFailure instead of crashing anything.
  */
-public class ApiService {
+public class ApiService implements Shutdownable {
 
     private static final String RANDOM_MEAL_URL = "https://www.themealdb.com/api/json/v1/1/random.php";
     private static final Duration TIMEOUT = Duration.ofSeconds(8);
@@ -104,6 +105,7 @@ public class ApiService {
     }
 
     /** Called from QuickBiteApp.stop() when the application closes. */
+    @Override
     public void shutdown() {
         executor.shutdownNow();
     }

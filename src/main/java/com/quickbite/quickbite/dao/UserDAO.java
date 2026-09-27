@@ -9,7 +9,25 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class UserDAO {
+import java.util.ArrayList;
+import java.util.List;
+
+public class UserDAO extends BaseDao<User> {
+
+    /** Every registered account. Not shown anywhere in the UI yet, but ready for an admin "Users" tab. */
+    @Override
+    public List<User> findAll() throws SQLException {
+        String sql = "SELECT id, username, password FROM users ORDER BY id";
+        List<User> users = new ArrayList<>();
+        try (Connection conn = DatabaseManager.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            while (rs.next()) {
+                users.add(new User(rs.getInt("id"), rs.getString("username"), rs.getString("password")));
+            }
+        }
+        return users;
+    }
 
     /** Returns the matching account, or null if the username doesn't exist. */
     public User findByUsername(String username) throws SQLException {

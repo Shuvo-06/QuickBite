@@ -14,6 +14,7 @@ import com.quickbite.quickbite.util.FoodIconUtil;
 import com.quickbite.quickbite.util.FoodImageUtil;
 import com.quickbite.quickbite.util.Navigator;
 import com.quickbite.quickbite.util.PriceFormatter;
+import javafx.beans.binding.Bindings;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -24,6 +25,7 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
@@ -39,6 +41,9 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 public class RestaurantController {
+
+    @FXML private BorderPane rootPane;
+    @FXML private VBox sidePanel;
 
     @FXML private Label offlineBar;
     @FXML private Label welcomeLabel;
@@ -58,16 +63,12 @@ public class RestaurantController {
 
     private String username;
     private Restaurant selectedRestaurant;
-    private Coupon appliedCoupon; // null until a valid code is applied
+    private Coupon appliedCoupon;
 
-    // Every restaurant loaded from the database, kept so search can filter without re-querying.
     private List<Restaurant> allRestaurants = new ArrayList<>();
 
-    // Chosen quantity per food item. Kept separate from the spinner widgets themselves,
-    // so a quantity is remembered even after the food card is rebuilt by a search filter.
     private final Map<FoodItem, Integer> quantities = new LinkedHashMap<>();
 
-    // Stored in a field so the SAME listener instance can be removed again in dispose().
     private final Consumer<Boolean> onlineListener = this::onNetworkStatusChanged;
 
     /** Runs automatically after the FXML is loaded. */
@@ -80,6 +81,10 @@ public class RestaurantController {
         foodSearchField.textProperty().addListener((obs, oldValue, newValue) -> filterFoods(newValue));
 
         NetworkMonitor.getInstance().addListener(onlineListener);
+
+        sidePanel.prefWidthProperty().bind(
+                Bindings.max(260, Bindings.min(420, rootPane.widthProperty().multiply(0.25)))
+        );
     }
 
     /** Called by Navigator when this window is hidden or replaced. */
@@ -105,11 +110,10 @@ public class RestaurantController {
 
     private void loadRestaurants() {
         try {
-            // findAll() only returns restaurants the admin has NOT blacklisted.
             allRestaurants = restaurantDAO.findAll();
             renderRestaurantList(allRestaurants);
         } catch (SQLException e) {
-            e.printStackTrace(); // details for the developer console only
+            e.printStackTrace();
             messageLabel.setText("Could not load restaurants from the database.");
         }
     }
@@ -118,6 +122,7 @@ public class RestaurantController {
     private void filterRestaurants(String query) {
         String needle = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
         List<Restaurant> filtered = new ArrayList<>();
+
         for (Restaurant restaurant : allRestaurants) {
             if (needle.isEmpty()
                     || restaurant.getName().toLowerCase(Locale.ROOT).contains(needle)
@@ -125,6 +130,7 @@ public class RestaurantController {
                 filtered.add(restaurant);
             }
         }
+
         renderRestaurantList(filtered);
     }
 
@@ -140,9 +146,11 @@ public class RestaurantController {
 
         for (Restaurant restaurant : restaurants) {
             HBox card = createRestaurantCard(restaurant);
+
             if (selectedRestaurant != null && selectedRestaurant.getId() == restaurant.getId()) {
-                card.getStyleClass().add("selected"); // keep the highlight while searching
+                card.getStyleClass().add("selected");
             }
+
             restaurantList.getChildren().add(card);
         }
     }
@@ -171,6 +179,7 @@ public class RestaurantController {
         card.setAlignment(Pos.CENTER_LEFT);
         card.getStyleClass().add("restaurant-card");
         card.setOnMouseClicked(event -> selectRestaurant(restaurant, card));
+
         return card;
     }
 
@@ -178,10 +187,11 @@ public class RestaurantController {
         for (Node card : restaurantList.getChildren()) {
             card.getStyleClass().remove("selected");
         }
+
         clickedCard.getStyleClass().add("selected");
 
         selectedRestaurant = restaurant;
-        quantities.clear(); // a fresh cart for the newly chosen restaurant
+        quantities.clear();
         clearCoupon();
         messageLabel.setText("");
         menuTitleLabel.setText(restaurant.getName());
@@ -189,8 +199,9 @@ public class RestaurantController {
         if (foodSearchField.getText().isEmpty()) {
             renderFoodList(restaurant.getMenu());
         } else {
-            foodSearchField.clear(); // triggers filterFoods(""), which shows the full new menu
+            foodSearchField.clear();
         }
+
         updateTotal();
     }
 
@@ -203,8 +214,10 @@ public class RestaurantController {
         if (selectedRestaurant == null) {
             return;
         }
+
         String needle = query == null ? "" : query.trim().toLowerCase(Locale.ROOT);
         List<FoodItem> filtered = new ArrayList<>();
+
         for (FoodItem food : selectedRestaurant.getMenu()) {
             if (needle.isEmpty()
                     || food.getName().toLowerCase(Locale.ROOT).contains(needle)
@@ -212,6 +225,7 @@ public class RestaurantController {
                 filtered.add(food);
             }
         }
+
         renderFoodList(filtered);
     }
 
@@ -252,10 +266,10 @@ public class RestaurantController {
         Label price = new Label(PriceFormatter.format(food.getPrice()));
         price.getStyleClass().add("price-label");
 
-        // Quantity picker: starts at whatever was chosen before (0 if never chosen)
         Spinner<Integer> quantity = new Spinner<>(0, 10, quantities.getOrDefault(food, 0));
         quantity.getStyleClass().add(Spinner.STYLE_CLASS_SPLIT_ARROWS_HORIZONTAL);
         quantity.setPrefWidth(110);
+
         quantity.valueProperty().addListener((obs, oldValue, newValue) -> {
             quantities.put(food, newValue);
             updateTotal();
@@ -264,22 +278,28 @@ public class RestaurantController {
         HBox card = new HBox(16, thumbnail, textBox, price, quantity);
         card.setAlignment(Pos.CENTER_LEFT);
         card.getStyleClass().add("food-card");
+
         return card;
     }
 
     private double subtotal() {
         double subtotal = 0;
+
         if (selectedRestaurant != null) {
             for (FoodItem food : selectedRestaurant.getMenu()) {
                 subtotal += food.getPrice() * quantities.getOrDefault(food, 0);
             }
         }
+
         return subtotal;
     }
 
     private void updateTotal() {
         double subtotal = subtotal();
-        double discount = appliedCoupon != null ? subtotal * appliedCoupon.getDiscountPercent() / 100.0 : 0;
+        double discount = appliedCoupon != null
+                ? subtotal * appliedCoupon.getDiscountPercent() / 100.0
+                : 0;
+
         double total = Math.max(0, subtotal - discount);
         totalLabel.setText("Total: " + PriceFormatter.format(total));
     }
@@ -291,6 +311,7 @@ public class RestaurantController {
     @FXML
     private void onApplyCoupon() {
         String code = couponField.getText();
+
         if (code == null || code.isBlank()) {
             couponMessageLabel.setText("Enter a coupon code first.");
             return;
@@ -298,6 +319,7 @@ public class RestaurantController {
 
         try {
             Coupon coupon = orderService.findValidCoupon(code);
+
             if (coupon == null) {
                 appliedCoupon = null;
                 couponMessageLabel.getStyleClass().setAll("error-label");
@@ -305,13 +327,17 @@ public class RestaurantController {
             } else {
                 appliedCoupon = coupon;
                 couponMessageLabel.getStyleClass().setAll("info-label");
-                couponMessageLabel.setText(coupon.getCode() + " applied: " + coupon.getDiscountPercent() + "% off");
+                couponMessageLabel.setText(
+                        coupon.getCode() + " applied: "
+                                + coupon.getDiscountPercent() + "% off"
+                );
             }
         } catch (SQLException e) {
-            e.printStackTrace(); // details for the developer console only
+            e.printStackTrace();
             couponMessageLabel.getStyleClass().setAll("error-label");
             couponMessageLabel.setText("Could not check that coupon right now.");
         }
+
         updateTotal();
     }
 
@@ -333,8 +359,10 @@ public class RestaurantController {
         }
 
         List<OrderItem> items = new ArrayList<>();
+
         for (FoodItem food : selectedRestaurant.getMenu()) {
             int quantity = quantities.getOrDefault(food, 0);
+
             if (quantity > 0) {
                 items.add(new OrderItem(food.getName(), quantity, food.getPrice()));
             }
@@ -345,22 +373,29 @@ public class RestaurantController {
             return;
         }
 
-        // The order must be blocked while offline, even though the database itself is local —
-        // this simulates the "cannot reach the server" behaviour the app should show offline.
         if (!NetworkMonitor.getInstance().isOnline()) {
-            Alert offlineAlert = new Alert(Alert.AlertType.ERROR,
-                    "Cannot connect to server. Please check your internet connection and try again.");
+            Alert offlineAlert = new Alert(
+                    Alert.AlertType.ERROR,
+                    "Cannot connect to server. Please check your internet connection and try again."
+            );
+
             offlineAlert.setHeaderText("You're offline");
             offlineAlert.showAndWait();
             return;
         }
 
         Order order;
+
         try {
             String couponCode = appliedCoupon != null ? appliedCoupon.getCode() : null;
-            order = orderService.createOrder(username, selectedRestaurant, items, couponCode);
+            order = orderService.createOrder(
+                    username,
+                    selectedRestaurant,
+                    items,
+                    couponCode
+            );
         } catch (SQLException e) {
-            e.printStackTrace(); // details for the developer console only
+            e.printStackTrace();
             messageLabel.setText("Could not save your order. Please try again.");
             return;
         }
@@ -368,11 +403,14 @@ public class RestaurantController {
         Alert confirmation = new Alert(Alert.AlertType.INFORMATION);
         confirmation.setTitle("Order placed");
         confirmation.setHeaderText("Order #" + order.getId() + " placed successfully!");
-        confirmation.setContentText("Total: " + PriceFormatter.format(order.getTotal())
-                + "\nWaiting for " + selectedRestaurant.getName() + " to confirm your order.");
+        confirmation.setContentText(
+                "Total: " + PriceFormatter.format(order.getTotal())
+                        + "\nWaiting for " + selectedRestaurant.getName()
+                        + " to confirm your order."
+        );
+
         confirmation.showAndWait();
 
-        // Tracking does NOT start yet: the restaurant must Accept it first (see the dashboard).
         Navigator.showDelivery(order);
     }
 
@@ -407,15 +445,25 @@ public class RestaurantController {
         content.setPrefWidth(360);
 
         if (meal.getImageUrl() != null && !meal.getImageUrl().isBlank()) {
-            ImageView imageView = new ImageView(new Image(meal.getImageUrl(), 320, 200, true, true, true));
+            ImageView imageView = new ImageView(
+                    new Image(meal.getImageUrl(), 320, 200, true, true, true)
+            );
+
             content.getChildren().add(imageView);
         }
 
-        Label category = new Label("Category: " + meal.getCategory() + "   |   Origin: " + meal.getArea());
+        Label category = new Label(
+                "Category: " + meal.getCategory()
+                        + "   |   Origin: " + meal.getArea()
+        );
+
         category.getStyleClass().add("card-text");
         category.setWrapText(true);
 
-        Label instructions = new Label(shorten(meal.getInstructions(), 400));
+        Label instructions = new Label(
+                shorten(meal.getInstructions(), 400)
+        );
+
         instructions.setWrapText(true);
         instructions.getStyleClass().add("card-text");
 
@@ -432,8 +480,12 @@ public class RestaurantController {
         if (text == null) {
             return "";
         }
+
         String trimmed = text.trim();
-        return trimmed.length() <= maxLength ? trimmed : trimmed.substring(0, maxLength) + "...";
+
+        return trimmed.length() <= maxLength
+                ? trimmed
+                : trimmed.substring(0, maxLength) + "...";
     }
 
     // ------------------------------------------------------------------

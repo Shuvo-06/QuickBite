@@ -4,6 +4,7 @@ import com.quickbite.quickbite.api.ApiService;
 import com.quickbite.quickbite.database.DatabaseInitializer;
 import com.quickbite.quickbite.service.NetworkMonitor;
 import com.quickbite.quickbite.service.OrderTrackingService;
+import com.quickbite.quickbite.service.Shutdownable;
 import com.quickbite.quickbite.util.Navigator;
 import com.quickbite.quickbite.util.NotificationHelper;
 import javafx.application.Application;
@@ -12,6 +13,7 @@ import javafx.scene.control.Alert;
 import javafx.stage.Stage;
 
 import java.sql.SQLException;
+import java.util.List;
 
 /**
  * The JavaFX Application class.
@@ -48,13 +50,19 @@ public class QuickBiteApp extends Application {
 
     /**
      * JavaFX calls stop() when the last window is closed.
-     * Every background thread pool the app created must be shut down here.
+     * Every background service implements Shutdownable, so they can all be stopped the same way
+     * through one interface — stop() doesn't need to know how each one works internally.
      */
     @Override
     public void stop() {
-        OrderTrackingService.getInstance().shutdown();
-        ApiService.getInstance().shutdown();
-        NetworkMonitor.getInstance().shutdown();
+        List<Shutdownable> backgroundServices = List.of(
+                OrderTrackingService.getInstance(),
+                ApiService.getInstance(),
+                NetworkMonitor.getInstance()
+        );
+        for (Shutdownable service : backgroundServices) {
+            service.shutdown();
+        }
         System.out.println("QuickBite is closing.");
     }
 }

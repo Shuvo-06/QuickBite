@@ -12,8 +12,9 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CouponDAO {
+public class CouponDAO extends BaseDao<Coupon> {
 
+    @Override
     public List<Coupon> findAll() throws SQLException {
         String sql = "SELECT id, code, discount_percent, start_date, end_date, is_active FROM coupons ORDER BY id DESC";
         List<Coupon> coupons = new ArrayList<>();

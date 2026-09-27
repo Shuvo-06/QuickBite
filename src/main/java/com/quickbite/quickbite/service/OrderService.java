@@ -30,13 +30,18 @@ public class OrderService {
 
         if (couponCode != null && !couponCode.isBlank()) {
             Coupon coupon = couponDAO.findByCode(couponCode);
-            if (coupon != null && coupon.isCurrentlyValid()) {
+            if (coupon != null) {
                 double subtotal = 0;
                 for (OrderItem item : items) {
                     subtotal += item.getSubtotal();
                 }
-                discountAmount = subtotal * coupon.getDiscountPercent() / 100.0;
-                appliedCode = coupon.getCode();
+                // Polymorphic call through Discountable: OrderService doesn't need to know HOW
+                // a coupon computes its discount, only that every Discountable can be asked for one.
+                double discount = coupon.discountFor(subtotal);
+                if (discount > 0) {
+                    discountAmount = discount;
+                    appliedCode = coupon.getCode();
+                }
             }
         }
 

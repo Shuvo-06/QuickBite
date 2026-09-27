@@ -14,9 +14,10 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class RestaurantDAO {
+public class RestaurantDAO extends BaseDao<Restaurant> {
 
     /** Active restaurants only, each with its menu. This is what customers browse. */
+    @Override
     public List<Restaurant> findAll() throws SQLException {
         return findRestaurants("WHERE is_active = 1");
     }

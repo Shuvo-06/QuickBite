@@ -21,7 +21,7 @@ import java.util.function.Consumer;
  * The check itself is a quick raw socket connection attempt (with a short timeout) rather than
  * a full HTTP request, since all we need to know is "is the network reachable right now?".
  */
-public class NetworkMonitor {
+public class NetworkMonitor implements Shutdownable {
 
     private static final String PROBE_HOST = "8.8.8.8"; // a well-known, highly available address
     private static final int PROBE_PORT = 53;            // DNS port: almost never blocked by firewalls
@@ -65,6 +65,7 @@ public class NetworkMonitor {
         listeners.remove(listener);
     }
 
+    @Override
     public void shutdown() {
         scheduler.shutdownNow();
     }

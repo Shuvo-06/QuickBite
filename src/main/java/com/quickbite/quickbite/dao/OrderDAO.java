@@ -16,7 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
-public class OrderDAO {
+public class OrderDAO extends BaseDao <Order> {
 
     private static final DateTimeFormatter DISPLAY_FORMAT = DateTimeFormatter.ofPattern("MMM d, yyyy HH:mm");
 
@@ -111,6 +111,7 @@ public class OrderDAO {
     }
 
     /** Loads every order in the whole system, most recent first. Used by the admin "track every order" view. */
+    @Override
     public List<Order> findAll() throws SQLException {
         return findOrders("", null, null);
     }
