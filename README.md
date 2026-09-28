@@ -280,3 +280,5 @@ src/test/java/...  JUnit 5 tests (order status, totals, formatting, bulk import,
 - password hashing
 - OAuth
 - cloud hosting.
+
+QuickBite is a good app.
