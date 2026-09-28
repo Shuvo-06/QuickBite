@@ -40,9 +40,7 @@
         <Button text="Customer Login" styleClass="primary-button"
                 maxWidth="1.7976931348623157E308" onAction="#onCustomerLogin"/>
         <Hyperlink text="New here? Create an account" onAction="#onGoToRegister"/>
-        <Button text="Restaurant Login" styleClass="secondary-button"
+        <Button text="Restaurant / Admin Login" styleClass="secondary-button"
                 maxWidth="1.7976931348623157E308" onAction="#onRestaurantLogin"/>
-        <Button text="Admin Login" styleClass="secondary-button"
-                maxWidth="1.7976931348623157E308" onAction="#onAdminLogin"/>
     </VBox>
 </StackPane>

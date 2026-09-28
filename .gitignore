@@ -6,3 +6,4 @@ target/
 *.log
 quickbite.db
 .DS_Store
+quickbite.properties

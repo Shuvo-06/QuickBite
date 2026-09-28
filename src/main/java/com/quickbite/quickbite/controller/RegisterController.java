@@ -2,6 +2,8 @@ package com.quickbite.quickbite.controller;
 
 import com.quickbite.quickbite.dao.UserDAO;
 import com.quickbite.quickbite.util.Navigator;
+import com.quickbite.quickbite.util.PasswordStrengthUtil;
+import com.quickbite.quickbite.util.PasswordStrengthUtil.Strength;
 import javafx.fxml.FXML;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
@@ -14,9 +16,28 @@ public class RegisterController {
     @FXML private TextField usernameField;
     @FXML private PasswordField passwordField;
     @FXML private PasswordField confirmPasswordField;
+    @FXML private Label strengthLabel;
     @FXML private Label messageLabel;
 
     private final UserDAO userDAO = new UserDAO();
+
+    @FXML
+    private void initialize() {
+        // Live feedback as the user types, rather than only checking on submit.
+        passwordField.textProperty().addListener((obs, oldValue, newValue) -> updateStrengthLabel(newValue));
+        updateStrengthLabel(""); // shows the "too short" hint immediately, before any typing
+    }
+
+    private void updateStrengthLabel(String password) {
+        if (password.isEmpty()) {
+            strengthLabel.getStyleClass().setAll("field-label");
+            strengthLabel.setText("Password must be at least 6 characters, with a mix of letters, numbers, or symbols.");
+            return;
+        }
+        Strength strength = PasswordStrengthUtil.evaluate(password);
+        strengthLabel.getStyleClass().setAll(PasswordStrengthUtil.styleClassFor(strength));
+        strengthLabel.setText(PasswordStrengthUtil.describe(strength));
+    }
 
     @FXML
     private void onRegister() {
@@ -26,6 +47,10 @@ public class RegisterController {
 
         if (username.isEmpty() || password.isEmpty()) {
             messageLabel.setText("Please choose a username and a password.");
+            return;
+        }
+        if (!PasswordStrengthUtil.isAcceptable(PasswordStrengthUtil.evaluate(password))) {
+            messageLabel.setText("Please choose a stronger password (see the hint above).");
             return;
         }
         if (!password.equals(confirm)) {

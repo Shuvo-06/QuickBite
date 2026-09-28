@@ -21,7 +21,7 @@
         <Label text="Manage your incoming orders." styleClass="app-subtitle"/>
 
         <VBox spacing="6.0">
-            <Label text="Restaurant" styleClass="field-label"/>
+            <Label text="Account" styleClass="field-label"/>
             <ComboBox fx:id="restaurantComboBox" styleClass="input" maxWidth="1.7976931348623157E308"/>
 
             <Label text="Password" styleClass="field-label"/>
@@ -36,7 +36,7 @@
         <Button text="Back" styleClass="secondary-button"
                 maxWidth="1.7976931348623157E308" onAction="#onBack"/>
 
-        <Label text="Demo password for every restaurant: restaurant123"
+        <Label text="Restaurants log in with the password the admin set for them."
                styleClass="card-text" wrapText="true"/>
     </VBox>
 </StackPane>

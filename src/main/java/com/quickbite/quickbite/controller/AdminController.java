@@ -30,6 +30,9 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+import com.quickbite.quickbite.dao.AdminDAO;
+import com.quickbite.quickbite.util.BulkImportParser;
+import javafx.scene.control.TextInputDialog;
 
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -68,6 +71,7 @@ public class AdminController {
     private final FoodDAO foodDAO = new FoodDAO();
     private final CouponDAO couponDAO = new CouponDAO();
     private final OrderDAO orderDAO = new OrderDAO();
+    private final AdminDAO adminDAO = new AdminDAO();
 
     // Reloads the "All Orders" tab the moment anything changes anywhere in the system.
     private final Consumer<Order> orderListener = order -> loadOrders();
@@ -108,6 +112,95 @@ public class AdminController {
         } catch (SQLException e) {
             e.printStackTrace();
             messageLabel.setText("Could not load restaurants.");
+        }
+    }
+
+    @FXML
+    private void onBulkAdd() {
+        Restaurant selected = restaurantTable.getSelectionModel().getSelectedItem();
+
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Bulk Add");
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+        dialog.setResizable(true);
+
+        Label help = new Label(
+                "One item per line, fields separated by |. Lines starting with # are ignored.\n\n"
+                        + "RESTAURANT: Name | Description | Rating | Password | Image (optional)\n"
+                        + "Food Name | Description | Price | Image (optional)  <- goes to the RESTAURANT line above it\n\n"
+                        + (selected != null
+                        ? "Food lines placed before any RESTAURANT line are added to: " + selected.getName()
+                        : "Tip: select a restaurant first if you only want to add foods to an existing one."));
+        help.setWrapText(true);
+
+        TextArea input = new TextArea();
+        input.setPrefRowCount(16);
+        input.setPrefColumnCount(70);
+        input.setStyle("-fx-font-family: monospace;");
+        input.setPromptText(
+                "RESTAURANT: Kebab Corner | Grilled kebabs and rolls | 4.5 | kebab123\n"
+                        + "Seekh Kebab | Minced beef skewers | 220\n"
+                        + "Chicken Roll | Paratha roll with chicken | 150 | chicken_roll.jpg");
+
+        VBox content = new VBox(10, help, input);
+        content.setPadding(new Insets(16));
+        dialog.getDialogPane().setContent(content);
+
+        if (dialog.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) {
+            return;
+        }
+
+        BulkImportParser.Result parsed = BulkImportParser.parse(input.getText());
+
+        if (!parsed.errors().isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR,
+                    String.join("\n", parsed.errors().subList(0, Math.min(10, parsed.errors().size()))));
+            alert.setHeaderText("Nothing was imported. Fix these lines and try again:");
+            alert.showAndWait();
+            return;
+        }
+        if (parsed.restaurants().isEmpty() && parsed.orphanFoods().isEmpty()) {
+            messageLabel.setText("Nothing to import.");
+            return;
+        }
+        if (!parsed.orphanFoods().isEmpty() && selected == null) {
+            messageLabel.setText("Some food lines have no RESTAURANT line above them. Select a restaurant first.");
+            return;
+        }
+
+        try {
+            int[] counts = adminDAO.bulkImport(parsed, selected != null ? selected.getId() : null);
+            messageLabel.setText("Imported " + counts[0] + " restaurant(s) and " + counts[1] + " food item(s).");
+            loadRestaurants();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            messageLabel.setText("Bulk import failed, nothing was saved.");
+        }
+    }
+
+    @FXML
+    private void onResetAllData() {
+        TextInputDialog confirm = new TextInputDialog();
+        confirm.setTitle("Reset all data");
+        confirm.setHeaderText("This permanently deletes ALL orders, restaurants, menus, coupons\n"
+                + "and customer accounts. The admin login is not affected.");
+        confirm.setContentText("Type RESET to confirm:");
+
+        Optional<String> answer = confirm.showAndWait();
+        if (answer.isEmpty() || !"RESET".equals(answer.get().trim())) {
+            messageLabel.setText("Reset cancelled.");
+            return;
+        }
+
+        try {
+            adminDAO.resetAllData();
+            loadRestaurants();
+            loadCoupons();
+            loadOrders();
+            messageLabel.setText("All data has been reset.");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            messageLabel.setText("Reset failed, nothing was deleted.");
         }
     }
 
@@ -185,8 +278,13 @@ public class AdminController {
         descriptionField.setPrefRowCount(3);
         Spinner<Double> ratingField = new Spinner<>(0.0, 5.0, existing != null ? existing.getRating() : 4.0, 0.1);
         ratingField.setEditable(true);
+        // Visible on purpose: the admin needs to tell the restaurant what it is.
+        TextField passwordField = new TextField();
+        passwordField.setPromptText(existing == null
+                ? "Login password (at least 4 characters)"
+                : "Leave blank to keep the current password");
         TextField imageUrlField = new TextField(existing != null ? existing.getImageUrl() : "");
-        imageUrlField.setPromptText("https://... (a Google image link works too) - optional");
+        imageUrlField.setPromptText("https://... OR a filename in the images folder (e.g. my_restaurant.jpg) - optional");
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -195,7 +293,11 @@ public class AdminController {
         grid.addRow(0, new Label("Name"), nameField);
         grid.addRow(1, new Label("Description"), descriptionField);
         grid.addRow(2, new Label("Rating"), ratingField);
-        grid.addRow(3, new Label("Image URL"), imageUrlField);
+        grid.addRow(3, new Label("Password"), passwordField);
+        grid.addRow(4, new Label("Image"), imageUrlField);
+        Label imageHint = new Label("Paste a link, or type a filename you've placed in\nsrc/main/resources/com/quickbite/quickbite/images/");
+        imageHint.getStyleClass().add("card-text");
+        grid.add(imageHint, 1, 5);
         dialog.getDialogPane().setContent(grid);
 
         Optional<ButtonType> result = dialog.showAndWait();
@@ -207,13 +309,23 @@ public class AdminController {
             return;
         }
 
+        String password = passwordField.getText().trim();
+        boolean passwordGiven = !password.isEmpty();
+        if ((existing == null || passwordGiven) && password.length() < 4) {
+            messageLabel.setText("Please set a login password of at least 4 characters.");
+            return;
+        }
+
         try {
             if (existing == null) {
                 restaurantDAO.insert(nameField.getText().trim(), descriptionField.getText().trim(),
-                        ratingField.getValue(), imageUrlField.getText());
+                        ratingField.getValue(), imageUrlField.getText(), password);
             } else {
                 restaurantDAO.update(existing.getId(), nameField.getText().trim(), descriptionField.getText().trim(),
                         ratingField.getValue(), imageUrlField.getText());
+                if (passwordGiven) {
+                    restaurantDAO.setPassword(existing.getId(), password);
+                }
             }
             messageLabel.setText("");
             loadRestaurants();
@@ -304,7 +416,7 @@ public class AdminController {
         descriptionField.setPrefRowCount(2);
         TextField priceField = new TextField(existing != null ? String.valueOf(existing.getPrice()) : "");
         TextField imageUrlField = new TextField(existing != null ? existing.getImageUrl() : "");
-        imageUrlField.setPromptText("https://... (a Google image link works too) - optional");
+        imageUrlField.setPromptText("https://... OR a filename in the images folder (e.g. my_dish.jpg) - optional");
 
         GridPane grid = new GridPane();
         grid.setHgap(10);
@@ -313,7 +425,10 @@ public class AdminController {
         grid.addRow(0, new Label("Name"), nameField);
         grid.addRow(1, new Label("Description"), descriptionField);
         grid.addRow(2, new Label("Price"), priceField);
-        grid.addRow(3, new Label("Image URL"), imageUrlField);
+        grid.addRow(3, new Label("Image"), imageUrlField);
+        Label imageHint = new Label("Paste a link, or type a filename you've placed in\nsrc/main/resources/com/quickbite/quickbite/images/");
+        imageHint.getStyleClass().add("card-text");
+        grid.add(imageHint, 1, 4);
         dialog.getDialogPane().setContent(grid);
 
         Optional<ButtonType> result = dialog.showAndWait();

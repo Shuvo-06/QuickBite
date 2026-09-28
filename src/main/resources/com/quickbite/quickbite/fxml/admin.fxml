@@ -23,6 +23,7 @@
             <Label text="QuickBite Admin Dashboard" styleClass="header-title"/>
             <Region HBox.hgrow="ALWAYS"/>
             <Label fx:id="messageLabel" styleClass="header-welcome"/>
+            <Button text="Reset All Data" styleClass="danger-button" onAction="#onResetAllData"/>
             <Button text="Logout" styleClass="header-button" onAction="#onLogout">
                 <graphic>
                     <FontIcon iconLiteral="fas-sign-out-alt" styleClass="header-button-icon"/>
@@ -52,6 +53,7 @@
 
                     <HBox spacing="10.0">
                         <Button text="Add Restaurant" styleClass="primary-button" onAction="#onAddRestaurant"/>
+                        <Button text="Bulk Add" styleClass="secondary-button" onAction="#onBulkAdd"/>
                         <Button text="Edit Selected" styleClass="secondary-button" onAction="#onEditRestaurant"/>
                         <Button text="Whitelist / Blacklist" styleClass="secondary-button" onAction="#onToggleRestaurantActive"/>
                         <Button text="Manage Foods" styleClass="secondary-button" onAction="#onManageFoods"/>

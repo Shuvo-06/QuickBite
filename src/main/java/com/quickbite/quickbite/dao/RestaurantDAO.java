@@ -67,19 +67,45 @@ public class RestaurantDAO extends BaseDao<Restaurant> {
         return new ArrayList<>(restaurantsById.values());
     }
 
-    /** Creates a new restaurant (admin panel) and returns its database-assigned id. */
-    public int insert(String name, String description, double rating, String imageUrl) throws SQLException {
-        String sql = "INSERT INTO restaurants (name, description, rating, is_active, image_url) VALUES (?, ?, ?, 1, ?)";
+    /** Creates a new restaurant (admin panel) with its own login password; returns its new id. */
+    public int insert(String name, String description, double rating, String imageUrl, String password)
+            throws SQLException {
+        String sql = "INSERT INTO restaurants (name, description, rating, is_active, image_url, password) "
+                + "VALUES (?, ?, ?, 1, ?, ?)";
         try (Connection conn = DatabaseManager.getConnection();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, name);
             ps.setString(2, description);
             ps.setDouble(3, rating);
             ps.setString(4, blankToNull(imageUrl));
+            ps.setString(5, password);
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 keys.next();
                 return keys.getInt(1);
+            }
+        }
+    }
+
+    /** Changes one restaurant's login password. */
+    public void setPassword(int id, String password) throws SQLException {
+        String sql = "UPDATE restaurants SET password = ? WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, password);
+            ps.setInt(2, id);
+            ps.executeUpdate();
+        }
+    }
+
+    /** True if the given password matches this restaurant's stored login password. */
+    public boolean checkPassword(int id, String password) throws SQLException {
+        String sql = "SELECT password FROM restaurants WHERE id = ?";
+        try (Connection conn = DatabaseManager.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, id);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() && rs.getString(1).equals(password);
             }
         }
     }

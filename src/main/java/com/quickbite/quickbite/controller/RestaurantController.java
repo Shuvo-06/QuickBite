@@ -1,7 +1,10 @@
 package com.quickbite.quickbite.controller;
 
 import com.quickbite.quickbite.api.ApiService;
-import com.quickbite.quickbite.api.MealDto;
+import com.quickbite.quickbite.api.NutritionInfo;
+import javafx.geometry.Insets;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.GridPane;
 import com.quickbite.quickbite.dao.RestaurantDAO;
 import com.quickbite.quickbite.model.Coupon;
 import com.quickbite.quickbite.model.FoodItem;
@@ -31,6 +34,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import org.kordamp.ikonli.javafx.FontIcon;
+import java.util.concurrent.ThreadLocalRandom;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -56,7 +60,6 @@ public class RestaurantController {
     @FXML private Label couponMessageLabel;
     @FXML private Label totalLabel;
     @FXML private Label messageLabel;
-    @FXML private Button discoverButton;
 
     private final RestaurantDAO restaurantDAO = new RestaurantDAO();
     private final OrderService orderService = new OrderService();
@@ -266,6 +269,14 @@ public class RestaurantController {
         Label price = new Label(PriceFormatter.format(food.getPrice()));
         price.getStyleClass().add("price-label");
 
+        FontIcon infoIcon = new FontIcon("fas-info-circle");
+        infoIcon.getStyleClass().add("nutrition-icon");
+        Button nutritionButton = new Button();
+        nutritionButton.setGraphic(infoIcon);
+        nutritionButton.getStyleClass().add("icon-button");
+        nutritionButton.setTooltip(new Tooltip("Nutrition facts (USDA)"));
+        nutritionButton.setOnAction(e -> showNutrition(food, nutritionButton));
+
         Spinner<Integer> quantity = new Spinner<>(0, 10, quantities.getOrDefault(food, 0));
         quantity.getStyleClass().add(Spinner.STYLE_CLASS_SPLIT_ARROWS_HORIZONTAL);
         quantity.setPrefWidth(110);
@@ -275,7 +286,7 @@ public class RestaurantController {
             updateTotal();
         });
 
-        HBox card = new HBox(16, thumbnail, textBox, price, quantity);
+        HBox card = new HBox(16, thumbnail, textBox, price, nutritionButton, quantity);
         card.setAlignment(Pos.CENTER_LEFT);
         card.getStyleClass().add("food-card");
 
@@ -415,77 +426,118 @@ public class RestaurantController {
     }
 
     // ------------------------------------------------------------------
-    // Phase 8: external API (TheMealDB) - JSON, HttpClient, concurrency
+    // Pick a Dish for Me: a quick recommendation from the CURRENT menu data (no network at all)
     // ------------------------------------------------------------------
 
     /**
-     * Optional feature: fetches a random real dish (name, category, photo) from a public API.
-     * Runs entirely on a background thread pool; the rest of the app works fine even if this fails.
+     * Randomly picks a dish from the selected restaurant's menu (or a random restaurant with a
+     * non-empty menu, if none is selected yet), switches to it if needed, and adds one to the cart.
+     * This is a purely local, synchronous operation over data already loaded from SQLite.
      */
     @FXML
-    private void onDiscoverDish() {
-        discoverButton.setDisable(true);
-        messageLabel.setText("Looking for a dish suggestion...");
+    private void onPickDishForMe() {
+        List<Restaurant> candidates = (selectedRestaurant != null && !selectedRestaurant.getMenu().isEmpty())
+                ? List.of(selectedRestaurant)
+                : allRestaurants.stream().filter(r -> !r.getMenu().isEmpty()).toList();
 
-        ApiService.getInstance().fetchRandomMeal(
-                this::showMealDialog,
-                error -> {
-                    discoverButton.setDisable(false);
-                    messageLabel.setText(error);
-                }
-        );
-    }
-
-    /** Called on the JavaFX thread once the API call succeeds. */
-    private void showMealDialog(MealDto meal) {
-        discoverButton.setDisable(false);
-        messageLabel.setText("");
-
-        VBox content = new VBox(10);
-        content.setPrefWidth(360);
-
-        if (meal.getImageUrl() != null && !meal.getImageUrl().isBlank()) {
-            ImageView imageView = new ImageView(
-                    new Image(meal.getImageUrl(), 320, 200, true, true, true)
-            );
-
-            content.getChildren().add(imageView);
+        if (candidates.isEmpty()) {
+            messageLabel.setText("No menu items available to pick from right now.");
+            return;
         }
 
-        Label category = new Label(
-                "Category: " + meal.getCategory()
-                        + "   |   Origin: " + meal.getArea()
-        );
+        Restaurant restaurant = candidates.get(ThreadLocalRandom.current().nextInt(candidates.size()));
+        switchToRestaurantIfNeeded(restaurant);
 
-        category.getStyleClass().add("card-text");
-        category.setWrapText(true);
+        List<FoodItem> menu = restaurant.getMenu();
+        FoodItem picked = menu.get(ThreadLocalRandom.current().nextInt(menu.size()));
+        quantities.put(picked, quantities.getOrDefault(picked, 0) + 1);
 
-        Label instructions = new Label(
-                shorten(meal.getInstructions(), 400)
-        );
-
-        instructions.setWrapText(true);
-        instructions.getStyleClass().add("card-text");
-
-        content.getChildren().addAll(category, instructions);
+        if (!foodSearchField.getText().isEmpty()) {
+            foodSearchField.clear();
+        }
+        renderFoodList(menu); // rebuild the cards so the spinner reflects the new quantity
+        updateTotal();
+        messageLabel.setText("");
 
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("Discover a Dish");
-        alert.setHeaderText(meal.getName());
-        alert.getDialogPane().setContent(content);
+        alert.setTitle("Pick of the Day");
+        alert.setHeaderText("We picked: " + picked.getName());
+        alert.setContentText("From " + restaurant.getName()
+                + ". We've added 1 to your cart — feel free to change the quantity.");
         alert.showAndWait();
     }
 
-    private String shorten(String text, int maxLength) {
-        if (text == null) {
-            return "";
+    /** Switches the menu panel to a different restaurant, same as clicking its card, unless it's already showing. */
+    private void switchToRestaurantIfNeeded(Restaurant restaurant) {
+        if (selectedRestaurant != null && selectedRestaurant.getId() == restaurant.getId()) {
+            return;
+        }
+        selectedRestaurant = restaurant;
+        quantities.clear();
+        clearCoupon();
+        menuTitleLabel.setText(restaurant.getName());
+        filterRestaurants(restaurantSearchField.getText()); // redraws the sidebar so the pick is highlighted
+    }
+
+    // ------------------------------------------------------------------
+    // Nutrition facts: external API (USDA FoodData Central) - JSON, HttpClient, concurrency
+    // ------------------------------------------------------------------
+
+    private void showNutrition(FoodItem food, Button sourceButton) {
+        sourceButton.setDisable(true);
+        messageLabel.setText("Looking up nutrition facts for " + food.getName() + "...");
+
+        // The HTTP call and JSON parsing run on a background thread; these callbacks come back
+        // on the JavaFX thread, so they may touch the UI directly.
+        ApiService.getInstance().fetchNutrition(
+                food.getName(),
+                info -> {
+                    sourceButton.setDisable(false);
+                    messageLabel.setText("");
+                    showNutritionDialog(food, info);
+                },
+                error -> {
+                    sourceButton.setDisable(false);
+                    messageLabel.setText(error);
+                });
+    }
+
+    private void showNutritionDialog(FoodItem food, NutritionInfo info) {
+        String[][] rows = {
+                {"Calories", NutritionInfo.describe(info.getCalories(), "kcal")},
+                {"Protein", NutritionInfo.describe(info.getProtein(), "g")},
+                {"Fat", NutritionInfo.describe(info.getFat(), "g")},
+                {"Carbohydrates", NutritionInfo.describe(info.getCarbs(), "g")},
+                {"Sugars", NutritionInfo.describe(info.getSugar(), "g")},
+                {"Fiber", NutritionInfo.describe(info.getFiber(), "g")},
+                {"Sodium", NutritionInfo.describe(info.getSodiumMg(), "mg")}
+        };
+
+        GridPane grid = new GridPane();
+        grid.setHgap(24);
+        grid.setVgap(8);
+        grid.setPadding(new Insets(10));
+        for (int i = 0; i < rows.length; i++) {
+            Label name = new Label(rows[i][0]);
+            name.getStyleClass().add("card-text");
+            Label value = new Label(rows[i][1]);
+            value.getStyleClass().add("card-title");
+            grid.addRow(i, name, value);
         }
 
-        String trimmed = text.trim();
+        Label note = new Label("Closest USDA match: " + info.getMatchedName()
+                + "\nValues are per 100 g of a generic food, so they approximate this dish rather than measure it.");
+        note.setWrapText(true);
+        note.getStyleClass().add("card-text");
 
-        return trimmed.length() <= maxLength
-                ? trimmed
-                : trimmed.substring(0, maxLength) + "...";
+        VBox content = new VBox(12, grid, note);
+        content.setPrefWidth(380);
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("Nutrition facts");
+        alert.setHeaderText(food.getName() + " (per 100 g)");
+        alert.getDialogPane().setContent(content);
+        alert.showAndWait();
     }
 
     // ------------------------------------------------------------------

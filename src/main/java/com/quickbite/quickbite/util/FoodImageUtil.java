@@ -2,14 +2,22 @@ package com.quickbite.quickbite.util;
 
 import javafx.scene.image.Image;
 
+import java.net.URL;
 import java.util.Locale;
 
 /**
- * Decides which picture to show for a food item or restaurant.
- * If the admin has set an image URL (including a Google image link), that is used directly —
- * JavaFX's Image class loads remote URLs on its own background thread. Otherwise, a bundled
- * local placeholder is chosen by matching keywords in the name, the same approach FoodIconUtil
- * uses for icons, so every dish always has SOME picture even with no internet connection.
+ * Decides which picture to show for a food item or restaurant. The admin's "Image" field in
+ * each Add/Edit form accepts EITHER of two things:
+ *
+ *   1. A full web address ("https://...") — loaded directly. JavaFX's Image class fetches
+ *      remote URLs on its own background thread, so this never blocks the JavaFX thread.
+ *   2. A plain filename ("my_special_pizza.jpg") — the admin has copied that file themselves
+ *      into src/main/resources/com/quickbite/quickbite/images/, and this class loads it from
+ *      there instead of trying to treat it as a web address.
+ *
+ * If neither is set (or a named local file can't actually be found), a bundled placeholder is
+ * chosen by matching keywords in the name, so every dish always has SOME picture even with no
+ * internet connection and no custom image supplied.
  */
 public class FoodImageUtil {
 
@@ -18,18 +26,35 @@ public class FoodImageUtil {
     private FoodImageUtil() {
     }
 
-    public static Image imageForFood(String foodName, String adminImageUrl) {
-        if (adminImageUrl != null && !adminImageUrl.isBlank()) {
-            return loadRemote(adminImageUrl);
-        }
-        return loadLocal(localFileFor(foodName));
+    public static Image imageForFood(String foodName, String adminImage) {
+        Image custom = resolveAdminImage(adminImage);
+        return custom != null ? custom : loadLocal(localFileFor(foodName));
     }
 
-    public static Image imageForRestaurant(String adminImageUrl) {
-        if (adminImageUrl != null && !adminImageUrl.isBlank()) {
-            return loadRemote(adminImageUrl);
+    public static Image imageForRestaurant(String adminImage) {
+        Image custom = resolveAdminImage(adminImage);
+        return custom != null ? custom : loadLocal("restaurant.png");
+    }
+
+    /** Returns null if no admin image was set, so the caller falls back to the keyword default. */
+    private static Image resolveAdminImage(String adminImage) {
+        if (adminImage == null || adminImage.isBlank()) {
+            return null;
         }
-        return loadLocal("restaurant.png");
+        String value = adminImage.trim();
+
+        if (value.startsWith("http://") || value.startsWith("https://")) {
+            return loadRemote(value);
+        }
+
+        // Not a URL, so treat it as a filename inside the images resource folder.
+        URL localFile = FoodImageUtil.class.getResource(IMAGES_FOLDER + value);
+        if (localFile == null) {
+            // The admin typed a filename that isn't actually there (typo, or not added yet) —
+            // fall back to the keyword default rather than showing a broken image.
+            return null;
+        }
+        return new Image(localFile.toExternalForm(), 0, 0, true, true, true);
     }
 
     private static String localFileFor(String foodName) {
@@ -49,8 +74,6 @@ public class FoodImageUtil {
     }
 
     private static Image loadLocal(String fileName) {
-        // "true" enables background loading, matching how remote URLs are loaded, so a slow disk
-        // read never blocks the JavaFX Application Thread either.
         return new Image(FoodImageUtil.class.getResource(IMAGES_FOLDER + fileName).toExternalForm(),
                 0, 0, true, true, true);
     }

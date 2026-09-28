@@ -60,22 +60,4 @@ public class LoginController {
     private void onRestaurantLogin() {
         Navigator.showRestaurantLogin();
     }
-
-    /**
-     * The admin login intentionally performs NO password check: any non-empty username and
-     * password logs straight into the admin dashboard. This is a deliberate simplification asked
-     * for explicitly, matching the same "Phase 1 placeholder" spirit as the rest of the login
-     * screens — it is not meant to represent real security.
-     */
-    @FXML
-    private void onAdminLogin() {
-        String username = usernameField.getText().trim();
-        String password = passwordField.getText();
-
-        if (username.isEmpty() || password.isEmpty()) {
-            messageLabel.setText("Please enter both a username and a password for admin access.");
-            return;
-        }
-        Navigator.showAdmin();
-    }
 }

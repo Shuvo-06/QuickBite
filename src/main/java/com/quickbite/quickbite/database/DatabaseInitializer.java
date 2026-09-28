@@ -19,7 +19,7 @@ public class DatabaseInitializer {
         try (Connection conn = DatabaseManager.getConnection()) {
             createTables(conn);
             migrateOlderDatabases(conn);
-            seedIfEmpty(conn);
+            seedOnFirstRun(conn);
 
             System.out.println("Database ready (" + DatabaseManager.DB_FILE + "): "
                     + "restaurants=" + count(conn, "restaurants")
@@ -45,7 +45,8 @@ public class DatabaseInitializer {
                         description TEXT,
                         rating      REAL NOT NULL DEFAULT 0,
                         is_active   INTEGER NOT NULL DEFAULT 1,
-                        image_url   TEXT
+                        image_url   TEXT,
+                        password    TEXT NOT NULL DEFAULT 'restaurant123'
                     )
                     """);
 
@@ -121,6 +122,7 @@ public class DatabaseInitializer {
         addColumnIfMissing(conn, "foods", "image_url", "TEXT");
         addColumnIfMissing(conn, "orders", "coupon_code", "TEXT");
         addColumnIfMissing(conn, "orders", "discount_amount", "REAL NOT NULL DEFAULT 0");
+        addColumnIfMissing(conn, "restaurants", "password", "TEXT NOT NULL DEFAULT 'restaurant123'");
     }
 
     private static void addColumnIfMissing(Connection conn, String table, String column, String definition)
@@ -139,42 +141,54 @@ public class DatabaseInitializer {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Sample data (only inserted when the restaurants table is empty)
-    // ------------------------------------------------------------------
-
-    private static void seedIfEmpty(Connection conn) throws SQLException {
-        if (count(conn, "restaurants") > 0) {
-            return;
+    /**
+     * Sample data is inserted only the FIRST time a database is ever set up. PRAGMA user_version
+     * remembers that, so after the admin uses "Reset All Data", restarting the app does not bring
+     * the sample restaurants back.
+     */
+    private static void seedOnFirstRun(Connection conn) throws SQLException {
+        int version;
+        try (Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery("PRAGMA user_version")) {
+            version = rs.next() ? rs.getInt(1) : 0;
         }
+        if (version >= 1) {
+            return; // already set up once, even if the data has since been reset
+        }
+        if (count(conn, "restaurants") == 0) {
+            insertSampleData(conn);
+        }
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute("PRAGMA user_version = 1");
+        }
+    }
 
+    private static void insertSampleData(Connection conn) throws SQLException {
         conn.setAutoCommit(false); // all sample rows are saved together, or not at all
         try {
-            int pizza = insertRestaurant(conn, "Pizza Palace", "Wood-fired pizzas and Italian favourites.", 4.6);
+            int pizza = insertRestaurant(conn, "Pizza Palace", "Wood-fired pizzas and Italian favourites.", 4.6, "pizza123");
             insertFood(conn, pizza, "Margherita Pizza", "Tomato sauce, mozzarella and fresh basil.", 250);
             insertFood(conn, pizza, "Chicken Pizza", "Grilled chicken, capsicum and cheese.", 350);
             insertFood(conn, pizza, "Garlic Bread", "Toasted bread with garlic butter.", 120);
             insertFood(conn, pizza, "Cold Drink", "Chilled soft drink, 500 ml.", 60);
 
-            int burger = insertRestaurant(conn, "Burger House", "Juicy burgers and crispy fries.", 4.3);
+            int burger = insertRestaurant(conn, "Burger House", "Juicy burgers and crispy fries.", 4.3, "burger123");
             insertFood(conn, burger, "Chicken Burger", "Crispy chicken fillet with mayo.", 180);
             insertFood(conn, burger, "Beef Burger", "Beef patty, cheddar and lettuce.", 250);
             insertFood(conn, burger, "French Fries", "Golden and lightly salted.", 100);
             insertFood(conn, burger, "Chocolate Shake", "Thick and creamy.", 150);
 
-            int bengal = insertRestaurant(conn, "Bengal Bites", "Traditional Bengali home-style meals.", 4.8);
+            int bengal = insertRestaurant(conn, "Bengal Bites", "Traditional Bengali home-style meals.", 4.8, "bengal123");
             insertFood(conn, bengal, "Chicken Biryani", "Fragrant rice with spiced chicken.", 280);
             insertFood(conn, bengal, "Beef Tehari", "Rice cooked with tender beef.", 240);
             insertFood(conn, bengal, "Beef Bhuna", "Slow-cooked beef in rich masala.", 320);
             insertFood(conn, bengal, "Mishti Doi", "Sweet traditional yogurt.", 70);
 
-            int noodle = insertRestaurant(conn, "Noodle Station", "Fresh noodles and Asian street food.", 4.4);
+            int noodle = insertRestaurant(conn, "Noodle Station", "Fresh noodles and Asian street food.", 4.4, "noodle123");
             insertFood(conn, noodle, "Chicken Chow Mein", "Stir-fried noodles with chicken.", 220);
             insertFood(conn, noodle, "Thai Soup", "Hot and sour soup with vegetables.", 200);
             insertFood(conn, noodle, "Vegetable Fried Rice", "Wok-fried rice with fresh vegetables.", 180);
             insertFood(conn, noodle, "Spring Rolls", "Crispy rolls with dipping sauce.", 140);
 
-            // A starter coupon so the discount feature has something to demo immediately.
             insertCoupon(conn, "WELCOME10", 10,
                     java.time.LocalDate.now().minusDays(1),
                     java.time.LocalDate.now().plusMonths(1));
@@ -188,14 +202,15 @@ public class DatabaseInitializer {
         }
     }
 
-    private static int insertRestaurant(Connection conn, String name, String description, double rating)
-            throws SQLException {
-        String sql = "INSERT INTO restaurants (name, description, rating, is_active, image_url) "
-                + "VALUES (?, ?, ?, 1, NULL)";
+    private static int insertRestaurant(Connection conn, String name, String description, double rating,
+                                        String password) throws SQLException {
+        String sql = "INSERT INTO restaurants (name, description, rating, is_active, image_url, password) "
+                + "VALUES (?, ?, ?, 1, NULL, ?)";
         try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, name);
             ps.setString(2, description);
             ps.setDouble(3, rating);
+            ps.setString(4, password);
             ps.executeUpdate();
             try (ResultSet keys = ps.getGeneratedKeys()) {
                 keys.next();
