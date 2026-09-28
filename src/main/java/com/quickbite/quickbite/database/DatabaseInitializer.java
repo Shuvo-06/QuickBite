@@ -189,10 +189,7 @@ public class DatabaseInitializer {
             insertFood(conn, noodle, "Vegetable Fried Rice", "Wok-fried rice with fresh vegetables.", 180);
             insertFood(conn, noodle, "Spring Rolls", "Crispy rolls with dipping sauce.", 140);
 
-            insertCoupon(conn, "WELCOME10", 10,
-                    java.time.LocalDate.now().minusDays(1),
-                    java.time.LocalDate.now().plusMonths(1));
-
+            insertCoupon(conn, "WELCOME10", 10, java.time.LocalDate.now().minusDays(1), java.time.LocalDate.now().plusMonths(1));
             conn.commit();
         } catch (SQLException e) {
             conn.rollback();

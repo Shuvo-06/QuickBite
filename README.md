@@ -230,3 +230,53 @@ the admin login untouched, because it is not stored in the database.
   <https://fdc.nal.usda.gov/api-key-signup.html>.
 
 ---
+
+## 9. Getting Started
+
+Requires JDK 21 and Maven (both on the same JDK).
+
+```bash
+git clone https://github.com/<your-username>/QuickBite.git
+cd QuickBite
+mvn clean compile
+mvn javafx:run
+mvn test
+```
+
+`quickbite.db` is created automatically on first run with four sample restaurants and a coupon.
+
+| Role | How to log in |
+|---|---|
+| Customer | Create an account (the password must be at least "Medium" strength) |
+| Restaurant | **Restaurant / Admin Login** → pick the restaurant → its password. Sample restaurants: `pizza123`, `burger123`, `bengal123`, `noodle123`. Restaurants from older databases: `restaurant123`. |
+| Admin | **Restaurant / Admin Login** → pick **Administrator** → `admin123` (a constant in `RestaurantLoginController`, not stored in the database) |
+| Coupon | `WELCOME10` |
+
+> Passwords are stored in plain text. That is a deliberate simplification for a classroom prototype.
+
+---
+
+## 10. Project Structure
+
+```
+src/main/java/com/quickbite/quickbite/
+├── Launcher.java, QuickBiteApp.java
+├── model/       Restaurant, FoodItem, Order, OrderItem, OrderStatus, User, Coupon, Discountable
+├── dao/         BaseDao, RestaurantDAO, FoodDAO, OrderDAO, UserDAO, CouponDAO, AdminDAO
+├── database/    DatabaseManager, DatabaseInitializer
+├── service/     OrderService, OrderTrackingService, NetworkMonitor, Shutdownable
+├── api/         ApiService, FdcSearchResponse, FdcFood, FdcNutrient, NutritionInfo
+├── controller/  one controller per screen
+└── util/        Navigator, NotificationHelper, PriceFormatter, FoodIconUtil, FoodImageUtil,
+                 PasswordStrengthUtil, BulkImportParser
+src/main/resources/com/quickbite/quickbite/  fxml/, css/quickbite.css, images/
+src/test/java/...  JUnit 5 tests (order status, totals, formatting, bulk import, nutrition parsing)
+```
+
+## 11. Future Improvements
+- real payments
+- GPS tracking
+- delivery riders
+- password hashing
+- OAuth
+- cloud hosting.
